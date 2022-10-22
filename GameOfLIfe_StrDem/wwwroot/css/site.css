@@ -1,71 +1,166 @@
-﻿/* Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
-for details on configuring this project to bundle and minify static web assets. */
-
-a.navbar-brand {
-  white-space: normal;
-  text-align: center;
-  word-break: break-all;
+﻿a.navbar-brand {
+    white-space: normal;
+    text-align: center;
+    word-break: break-all;
 }
 
-/* Provide sufficient contrast against white background */
 a {
-  color: #0366d6;
+    color: #0366d6;
 }
 
-.btn-primary {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
-}
 
-.nav-pills .nav-link.active, .nav-pills .show > .nav-link {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
-}
-
-/* Sticky footer styles
--------------------------------------------------- */
 html {
-  font-size: 14px;
+    font-size: 14px;
 }
+
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.border-top {
-  border-top: 1px solid #e5e5e5;
-}
-.border-bottom {
-  border-bottom: 1px solid #e5e5e5;
-}
-
-.box-shadow {
-  box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
-}
-
-button.accept-policy {
-  font-size: 1rem;
-  line-height: inherit;
-}
-
-/* Sticky footer styles
--------------------------------------------------- */
-html {
-  position: relative;
-  min-height: 100%;
+    html {
+        font-size: 16px;
+    }
 }
 
 body {
-  /* Margin bottom by footer height */
-  margin-bottom: 60px;
+    background: #4d3131;
+    margin: 0;
+    min-height: 100%;
 }
-.footer {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  white-space: nowrap;
-  line-height: 60px; /* Vertically center the text there */
+
+.center {
+    /*  position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);*/
+
+    position: absolute;
+    margin: auto;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.panel {
+    background-color: #e2e2e2;
+    color: #2f2f2f;
+    border-radius: 7px;
+}
+
+.panel-title {
+    text-align: center;
+    background-color: #009688;
+    color: #ffffff;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+}
+
+.enter {
+    min-width: 250px;
+    min-height: 180px;
+    width: min-content;
+    height: min-content;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 4px 4px 8px 0px rgba(0, 0, 0, 0.2);
+}
+
+.error {
+    margin: 0.5rem 0 0 0;
+    color: #bb3131;
+    font-weight: 700;
+    text-align: center;
+    align-self: center;
+    white-space: nowrap;
+}
+
+.main {
+    width: 90%;
+    height: 80%;
+    background: #c0c0c0;
+    display: flex;
+    justify-content: space-between;
+    overflow-y: auto;
+    box-shadow: 0px 5px 10px 0px rgba(0, 0, 0, 0.5);
+}
+
+.players {
+    flex: 1;
+    max-width: 50%;
+    margin: 1rem 0 1rem 1rem;
+    background: #aa9999;
+    color: whitesmoke;
+}
+
+.players, tr {
+    height: fit-content();
+}
+
+.players, td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0.5rem;
+    max-width: 30vw;
+    height: 20%;
+}
+
+.rules {
+    flex: 1;
+    max-width: 50%;
+    margin: 1rem;
+    background: #dadada;
+}
+
+.commit-button {
+    height: min-content;
+    user-select: none;
+    background: #4990e2;
+    color: whitesmoke;
+    border-radius: 4px;
+    padding: 0.4em;
+    border: 0;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 40%);
+}
+
+    .commit-button:hover {
+        cursor: pointer;
+        background: #1b6ec2;
+        color: whitesmoke;
+        text-decoration: none;
+        box-shadow: 0 1px 4px rgb(0 0 0 / 40%);
+    }
+
+    .commit-button:active {
+        background: #185694;
+    }
+
+.delete-button {
+    height: min-content;
+    user-select: none;
+    background: #e24949;
+    color: whitesmoke;
+    border-radius: 4px;
+    padding: 0.4em;
+    border: 0;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 40%);
+}
+
+    .delete-button:hover {
+        cursor: pointer;
+        background: #c21b1b;
+        color: whitesmoke;
+        text-decoration: none;
+        box-shadow: 0 1px 4px rgb(0 0 0 / 40%);
+    }
+
+    .delete-button:active {
+        background: #185694;
+    }
+
+
+.inputText {
+    border: 0;
+    outline: 0;
+    text-align: center;
+    margin: 0.5rem;
+    background: rgb(188 207 229);
 }

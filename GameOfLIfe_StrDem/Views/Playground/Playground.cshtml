@@ -1,0 +1,82 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+<div id="Enter" class="center enter panel">
+    <label class="panel-title">Play as Guest</label>
+    <input class="inputText" type="text" id="playerName" maxlength="12" value="@Context.Request.Cookies["playerName"]" placeholder="Имя игрока" required />
+    <input class="commit-button" type="submit" value="Go!" style="margin: 10px 0.5rem 1rem 0.5rem;" onclick="Enter(playerName.value)" />
+    <label class="error" id="WrongPlayerName" hidden="hidden" style="margin: 0 0.5rem 1rem 0.5rem;">Указанное имя не подходит</label>
+</div>
+
+
+<div id="Main" class="main center" hidden="hidden">
+    <table class="table-striped players">
+        <thead>
+            <tr>
+                <th>Имя</th>
+                <th width="25%"></th>
+            </tr>
+        </thead>
+        <tbody id="PlayerList">
+        </tbody>
+    </table>
+
+    <div id="GameRules" class="rules">
+
+    </div>
+</div>
+
+
+
+<script>
+
+    function Enter(playerName) {
+
+        let formData = new FormData();
+        formData.append("playerName", playerName);
+
+        $.ajax(
+            {
+                url: "/Playground/Enter",
+                data: formData,
+                processData: false,
+                contentType: false,
+                type: "POST",
+                success: function (data) {
+                    if (data == 'WrongName') {
+                        document.getElementById("WrongPlayerName").hidden = false;
+                    }
+                    if (data == 'OK') {
+                        document.getElementById("WrongPlayerName").hidden = true;
+                        Start();
+                    }
+                }
+            }
+        );
+
+    }
+
+    function Start() {
+        let connectionId;
+
+        let hubConnection = new signalR.HubConnectionBuilder()
+            .withUrl('/playground')
+            .build();
+
+        hubConnection.on("UpdatePlayerList", function (data) {
+            $('#PlayerList').empty();
+            $.each(data, function (i, player) {
+                if (player.id != hubConnection.connectionId)
+                    $('#PlayerList').append("<tr><td>" + player.name + " </td><td><input type='button' class='commit-button' value='Играть'/></td></tr>");
+            });
+        });
+
+        hubConnection.start().then(function () {
+            document.getElementById("Main").hidden = false;
+            document.getElementById("Enter").hidden = true;
+        });
+    }
+
+
+
+</script>

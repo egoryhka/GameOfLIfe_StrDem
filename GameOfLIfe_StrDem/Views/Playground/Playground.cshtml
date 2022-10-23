@@ -8,25 +8,29 @@
     <label class="error" id="WrongPlayerName" hidden="hidden" style="margin: 0 0.5rem 1rem 0.5rem;">Указанное имя не подходит</label>
 </div>
 
-<div>
 
-    <div id="Main" class="main center" hidden="hidden">
-        <table class="table-striped table-responsive players" style="overflow: auto;">
+<div id="Main" class="main center" hidden="hidden">
+    <div>
+        <p class="main-title">Игроки OnLine</p>
+    </div>
+    <div>
+        <p class="main-title">Правила</p>
+    </div>
+    <div class="players">
+        <table class="table-striped">
             <thead>
-                <tr>
+                <tr style="position:sticky;">
                     <th>Имя</th>
                     <th width="25%"></th>
                 </tr>
             </thead>
-            <tbody id="PlayerList">
-            </tbody>
+            <tbody id="PlayerList"></tbody>
         </table>
-
-        <div id="GameRules" class="rules">
-
-        </div>
     </div>
 
+    <div id="GameRules" class="rules">
+
+    </div>
 </div>
 
 
@@ -69,7 +73,7 @@
             $('#PlayerList').empty();
             $.each(data, function (i, player) {
                 if (player.id != hubConnection.connectionId)
-                    $('#PlayerList').append("<tr><td style='max-width:0'>" + player.name + " </td><td><input type='button' class='commit-button' value='Играть'/></td></tr>");
+                    $('#PlayerList').append("<tr><td style='max-width:0'>" + player.name + " </td><td><input type='button' class='commit-button' style='float:right;' value='Играть'/></td></tr>");
             });
         });
 

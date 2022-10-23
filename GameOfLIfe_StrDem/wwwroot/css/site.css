@@ -92,7 +92,7 @@ body {
 
 .players {
     width: 100%;
-    overflow: auto;
+    overflow-y: scroll;
     background: #aa9999;
     color: whitesmoke;
 }
@@ -112,9 +112,26 @@ body {
     }
 
 .rules {
+    padding: 10px;
     overflow: auto;
     background: #dadada;
 }
+
+.rule-block {
+    width: 100%;
+    margin: 20px 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center
+}
+
+    .rule-block p {
+        margin: 0.5rem;
+    }
+
+    .rule-block img {
+        height: 50px;
+    }
 
 .commit-button {
     height: min-content;

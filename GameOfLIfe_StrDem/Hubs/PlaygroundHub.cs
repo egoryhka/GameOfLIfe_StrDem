@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using GameOfLIfe_StrDem.Models;
 using Microsoft.AspNetCore.Authorization;
+using System.Linq.Dynamic.Core;
 
 
 namespace GameOfLIfe_StrDem.Hubs
@@ -36,6 +37,13 @@ namespace GameOfLIfe_StrDem.Hubs
             }
             await Clients.All.SendAsync("UpdatePlayerList", _playgroundService.Players);
             await base.OnDisconnectedAsync(exception);
+        }
+
+        public async Task FilterPlayerNames(string nameFilter)
+        {
+            nameFilter = nameFilter.Trim().ToLower();
+            await Clients.Caller.SendAsync("UpdatePlayerList",
+                _playgroundService.Players.AsQueryable().Where("Name.ToLower().StartsWith(@0)", nameFilter));
         }
 
 

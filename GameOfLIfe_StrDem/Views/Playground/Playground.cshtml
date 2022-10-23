@@ -11,17 +11,21 @@
 
 <div id="Main" class="main center" hidden="hidden">
     <div>
-        <p class="main-title">Игроки OnLine</p>
+        <h5 class="main-title">Игроки OnLine</h5>
     </div>
     <div>
-        <p class="main-title">Правила</p>
+        <h5 class="main-title">Правила</h5>
     </div>
     <div class="players">
         <table class="table-striped">
             <thead>
                 <tr style="position:sticky;">
-                    <th>Имя</th>
-                    <th width="25%"></th>
+                    <th>
+                        <label style="margin: 0.5rem;">Имя</label>
+                    </th>
+                    <th width="25%">
+                        <input class="inputText" style="float:right" type="text" id="nameFilter" value="" placeholder="имя..." oninput="FilterPlayerNames(this.value)" />
+                    </th>
                 </tr>
             </thead>
             <tbody id="PlayerList"></tbody>
@@ -29,6 +33,32 @@
     </div>
 
     <div id="GameRules" class="rules">
+        <div class="rule-block">
+            <p>Используя мышь - рисуй приколы! </p>
+            <img src="~/icons/mouse.gif" />
+        </div>
+        <div class="rule-block">
+            <p>На рисование дается - 30 секунд! </p>
+            <img src="~/icons/timer.gif" />
+        </div>
+        <div class="rule-block">
+            <p>После рисования - <u>Симуляция</u>! - 1 минута! </p>
+            <img style="image-rendering: pixelated; " src="~/icons/glider.gif" />
+        </div>
+
+        <div class="rule-block">
+            <p>У тебя больше <u>Живых</u> клеток чем у противника? - Ты победил! </p>
+            <img src="~/icons/win.gif" />
+        </div>
+
+        <div class="rule-block">
+            <a target="_blank" href="https://ru.wikipedia.org/wiki/%D0%98%D0%B3%D1%80%D0%B0_%C2%AB%D0%96%D0%B8%D0%B7%D0%BD%D1%8C%C2%BB#%D0%9F%D1%80%D0%B0%D0%B2%D0%B8%D0%BB%D0%B0">Правила выживания! </a>
+            <img src="~/icons/finger.gif" />
+        </div>
+
+        <div class="rule-block">
+            <h4>Успехов и удачи!</h4>
+        </div>
 
     </div>
 </div>
@@ -36,6 +66,8 @@
 
 
 <script>
+
+    let hubConnection;
 
     function Enter(playerName) {
 
@@ -65,7 +97,7 @@
 
     function Start() {
 
-        let hubConnection = new signalR.HubConnectionBuilder()
+        hubConnection = new signalR.HubConnectionBuilder()
             .withUrl('/playground')
             .build();
 
@@ -83,6 +115,8 @@
         });
     }
 
-
+    function FilterPlayerNames(nameFilter) {
+        if (hubConnection != null) hubConnection.invoke("FilterPlayerNames", nameFilter)
+    }
 
 </script>

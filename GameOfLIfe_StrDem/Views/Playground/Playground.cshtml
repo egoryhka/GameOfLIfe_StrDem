@@ -3,7 +3,7 @@
 }
 <div id="Enter" class="center enter panel">
     <label class="panel-title">Play as Guest</label>
-    <input class="inputText" type="text" id="playerName" maxlength="20" value="@Context.Request.Cookies["playerName"]" placeholder="Имя игрока" required />
+    <input class="inputText" type="text" id="playerName" maxlength="12" value="@Context.Request.Cookies["playerName"]" placeholder="Имя игрока" required />
     <input class="commit-button" type="submit" value="Go!" style="margin: 10px 0.5rem 1rem 0.5rem;" onclick="Enter(playerName.value)" />
     <label class="error" id="WrongPlayerName" hidden="hidden" style="margin: 0 0.5rem 1rem 0.5rem;">Указанное имя не подходит</label>
 </div>

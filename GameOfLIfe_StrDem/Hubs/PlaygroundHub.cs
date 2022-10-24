@@ -46,7 +46,11 @@ namespace GameOfLIfe_StrDem.Hubs
                 _playgroundService.Players.AsQueryable().Where("Name.ToLower().StartsWith(@0)", nameFilter));
         }
 
-
+        public async Task Invite(string targetId)
+        {
+            Player sender = _playgroundService.Players.FirstOrDefault(x => x.Id == Context.ConnectionId);
+            if (sender != null) await Clients.Client(targetId).SendAsync("Invite", sender);
+        }
 
     }
 }

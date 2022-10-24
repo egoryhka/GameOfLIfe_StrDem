@@ -8,8 +8,16 @@
     <label class="error" id="WrongPlayerName" hidden="hidden" style="margin: 0 0.5rem 1rem 0.5rem;">Указанное имя не подходит</label>
 </div>
 
+<div id="Invite" class="invitation panel">
+    <label id="InviteLabel" class="panel-title"></label>
+    <div class="d-inline-flex" style="justify-content: center;">
+        <input class="commit-button" type="submit" value="Принять" style="margin: 10px 0.5rem 1rem 0.5rem;" onclick="AcceptInvitation();" />
+        <input class="delete-button" type="submit" value="Отклонить" style="margin: 10px 0.5rem 1rem 0.5rem;" onclick="DeclineInvitation();" />
+    </div>
 
-<div id="Main" class="main center" hidden="hidden">
+</div>
+
+<div id="Main" class="center main" hidden="hidden">
     <div>
         <h5 class="main-title">Игроки OnLine</h5>
     </div>
@@ -64,10 +72,29 @@
 </div>
 
 
+<div id="Game" class="center game" hidden="hidden">
+
+    <div id="MyName">   </div>
+
+    <div id="OpponentName">   </div>
+
+    <div id="MyField">   </div>
+
+    <div id="OpponentField">   </div>
+
+    <div id="MyReady">   </div>
+
+    <div id="OpponentReady">   </div>
+
+    <div id="Timer">   </div>
+
+</div>
+
 
 <script>
 
     let hubConnection;
+    let opponent;
 
     function Enter(playerName) {
 
@@ -103,10 +130,15 @@
 
         hubConnection.on("UpdatePlayerList", function (data) {
             $('#PlayerList').empty();
-            $.each(data, function (i, player) {
-                if (player.id != hubConnection.connectionId)
-                    $('#PlayerList').append("<tr><td style='max-width:0'>" + player.name + " </td><td><input type='button' class='commit-button' style='float:right;' value='Играть'/></td></tr>");
-            });
+            DisplayPlayers(data);
+        });
+
+        hubConnection.on("Invite", function (sender) {
+            opponent = sender;
+            document.getElementById('InviteLabel').textContent = 'Invite from - ' + sender.name;
+            document.getElementById('Invite').classList.add("invitation-visible");
+
+            //    document.getElementById('Invite').hidden = false;
         });
 
         hubConnection.start().then(function () {
@@ -115,8 +147,34 @@
         });
     }
 
+    function DisplayPlayers(data) {
+        if (hubConnection != null) {
+            $.each(data, function (i, player) {
+                if (player.id != hubConnection.connectionId)
+                    $('#PlayerList')
+                        .append("<tr><td style='max-width:0'>" + player.name + " </td>" +
+                            "<td><input type='button' class='commit-button' style='float:right' value='Играть' onclick='Invite(`" + player.id + "`)'/></td></tr>");
+            });
+        }
+    }
+
     function FilterPlayerNames(nameFilter) {
         if (hubConnection != null) hubConnection.invoke("FilterPlayerNames", nameFilter)
     }
+
+    function Invite(targetId) {
+        if (hubConnection != null) hubConnection.invoke("Invite", targetId)
+    }
+
+    function DeclineInvitation() {
+        opponent = null;
+        document.getElementById('Invite').classList.remove("invitation-visible");
+    }
+
+    function AcceptInvitation() {
+        document.getElementById('Invite').classList.remove("invitation-visible");
+        document.getElementById("Main").hidden = true;
+    }
+
 
 </script>

@@ -9,6 +9,7 @@ namespace GameOfLIfe_StrDem.Services
     public class PlaygroundService
     {
         public List<Player> Players { get; set; } = /*new List<Player>()*/ TestForView;
+        public Dictionary<string, Game> Games { get; set; } = new Dictionary<string, Game>();
 
         private static List<Player> TestForView => new List<Player>()
         {

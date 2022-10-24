@@ -74,19 +74,19 @@
 
 <div id="Game" class="center game" hidden="hidden">
 
-    <div id="MyName">   </div>
+    <div><h5 id="MyName" class="game-title"> </h5></div>
 
-    <div id="OpponentName">   </div>
+    <div><h5 id="OpponentName" class="game-title"> </h5></div>
 
-    <div id="MyField">   </div>
+    <div id="MyField" class="field"> <canvas width="10" height="10" src="~/icons/">   </canvas>  </div>
 
-    <div id="OpponentField">   </div>
+    <div id="OpponentField" class="field">  <canvas width="10" height="10">    </canvas>  </div>
 
-    <div id="MyReady">   </div>
-
-    <div id="OpponentReady">   </div>
-
-    <div id="Timer">   </div>
+    <div id="ReadyRow" class="ready-row">
+        <div id="MyReady"> <input class="commit-button" type="button" id="myReadyBtn" value="Готов" /> </div>
+        <div id="Timer" class="timer"> 30:00  </div>
+        <div id="OpponentReady"> <input class="commit-button" type="button" disabled="disabled" id="opponentReadyBtn" value="Готов" style="" /> </div>
+    </div>
 
 </div>
 
@@ -94,6 +94,8 @@
 <script>
 
     let hubConnection;
+    let inviteSender;
+    let me;
     let opponent;
 
     function Enter(playerName) {
@@ -130,32 +132,44 @@
 
         hubConnection.on("UpdatePlayerList", function (data) {
             $('#PlayerList').empty();
-            DisplayPlayers(data);
+            $.each(data, function (i, player) {
+                if (player.id == hubConnection.connectionId) me = player;
+                else {
+                    $('#PlayerList')
+                        .append("<tr><td style='max-width:0'>" + player.name + " </td>" +
+                            "<td><input type='button' class='commit-button' style='float:right' value='Играть' onclick='Invite(`" + player.id + "`)'/></td></tr>");
+                }
+            });
         });
 
         hubConnection.on("Invite", function (sender) {
-            opponent = sender;
+            inviteSender = sender;
             document.getElementById('InviteLabel').textContent = 'Invite from - ' + sender.name;
             document.getElementById('Invite').classList.add("invitation-visible");
+        });
 
-            //    document.getElementById('Invite').hidden = false;
+        hubConnection.on("GameStarted", function (opponent) {
+            document.getElementById("Main").hidden = true;
+            document.getElementById("Game").hidden = false;
+            inviteSender = null;
+
+            document.getElementById('MyName').textContent = me.name;
+            document.getElementById('OpponentName').textContent = opponent.name;
+        });
+
+        hubConnection.on("GameStoped", function () {
+            document.getElementById("Main").hidden = false;
+            document.getElementById("Game").hidden = true;
+            opponent = null;
+
+            document.getElementById('MyName').textContent = '';
+            document.getElementById('OpponentName').textContent = '';
         });
 
         hubConnection.start().then(function () {
             document.getElementById("Main").hidden = false;
             document.getElementById("Enter").hidden = true;
         });
-    }
-
-    function DisplayPlayers(data) {
-        if (hubConnection != null) {
-            $.each(data, function (i, player) {
-                if (player.id != hubConnection.connectionId)
-                    $('#PlayerList')
-                        .append("<tr><td style='max-width:0'>" + player.name + " </td>" +
-                            "<td><input type='button' class='commit-button' style='float:right' value='Играть' onclick='Invite(`" + player.id + "`)'/></td></tr>");
-            });
-        }
     }
 
     function FilterPlayerNames(nameFilter) {
@@ -172,8 +186,9 @@
     }
 
     function AcceptInvitation() {
+        if (me == null || inviteSender == null) return;
+        if (hubConnection != null) hubConnection.invoke("StartGame", me.id, inviteSender.id);
         document.getElementById('Invite').classList.remove("invitation-visible");
-        document.getElementById("Main").hidden = true;
     }
 
 

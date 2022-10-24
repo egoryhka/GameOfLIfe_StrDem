@@ -57,7 +57,7 @@ body {
 
 .enter {
     min-width: 250px;
-    min-height: 180px;
+    min-height: 200px;
     width: min-content;
     height: min-content;
     display: flex;
@@ -116,8 +116,55 @@ body {
     box-shadow: 0px 5px 10px 0px rgba(0, 0, 0, 0.5);
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: 0.2fr 3fr 1fr;
 }
+
+.game-title {
+    background: #c0c0c0;
+    text-align: center;
+    margin: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ready-row {
+    font-size: 2rem;
+    text-align: center;
+    background: #504040;
+    grid-column-start: 1;
+    grid-column-end: 3;
+    display: inline-flex;
+    justify-content: space-evenly;
+    align-items: center;
+}
+
+.timer {
+    color: whitesmoke;
+    padding: 0.4rem;
+    border-radius: 3px;
+    background: #009688;
+}
+
+.field {
+    background: #627862;
+    display: flex;
+    justify-content: center;
+}
+
+    .field canvas {
+        background: rgba(40, 40, 40, 0.4)
+    }
+
+    .field:nth-child(3n) {
+        border-right: 2px solid #c0c0c0;
+    }
+
+    .field:nth-child(2n) {
+        border-left: 2px solid #c0c0c0;
+    }
+
+
 
 .players {
     width: 100%;
@@ -168,7 +215,7 @@ body {
     background: #4990e2;
     color: whitesmoke;
     border-radius: 4px;
-    padding: 0.4em;
+    padding: 0.4rem;
     border: 0;
     box-shadow: 0 1px 2px rgb(0 0 0 / 40%);
 }
@@ -183,6 +230,18 @@ body {
 
     .commit-button:active {
         background: #185694;
+    }
+
+    .commit-button:disabled {
+        cursor: default;
+        height: min-content;
+        user-select: none;
+        background: #4990e2;
+        color: whitesmoke;
+        border-radius: 4px;
+        padding: 0.4rem;
+        border: 0;
+        box-shadow: 0 1px 2px rgb(0 0 0 / 40%);
     }
 
 .delete-button {

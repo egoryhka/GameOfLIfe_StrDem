@@ -12,13 +12,16 @@ namespace GameOfLIfe_StrDem.Models
         public int WinCount { get; set; }
         public int LoseCount { get; set; }
         public int GamesCount { get; set; }
+        public float Skill { get; private set; }
+
+        public bool InGame { get; set; }
+        public string GameId { get; set; }
 
         public Player(string id, string name)
         {
             Id = id; Name = name;
         }
 
-        public float Skill { get; private set; }
 
         private float oldest = float.NaN;
         public void RecalcSkill(int aliveCellsCount, int windowWidth)

@@ -8,14 +8,20 @@ namespace GameOfLIfe_StrDem.Models
     public class Player
     {
         public string Id { get; set; }
+        public string GameId { get; set; }
+
         public string Name { get; set; }
+
         public int WinCount { get; set; }
         public int LoseCount { get; set; }
         public int GamesCount { get; set; }
+
         public float Skill { get; private set; }
 
         public bool InGame { get; set; }
-        public string GameId { get; set; }
+        public bool Inviting { get; set; }
+        public bool Filtering { get; set; }
+
 
         public Player(string id, string name)
         {

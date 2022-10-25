@@ -1,9 +1,36 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "";
+
+    string[] randomNames = new string[]
+    {
+        "Лёша",
+        "Тёма",
+        "Вадик",
+        "Вова",
+        "Валя",
+        "Даня",
+        "Деня",
+        "Дима",
+        "Егор",
+        "Кира",
+        "Лёня",
+        "Макс",
+        "Мотя",
+        "Никита",
+        "Олег",
+        "Паша",
+        "Петя",
+        "Рома",
+        "Серёжа",
+        "Стас",
+                    };
 }
+<a target="_blank" href="#">Новая вкладка</a>
+
 <div id="Enter" class="center enter panel">
     <label class="panel-title">Play as Guest</label>
-    <input class="inputText" type="text" id="playerName" maxlength="12" value="@Context.Request.Cookies["playerName"]" placeholder="Имя игрока" required />
+    @* @Context.Request.Cookies["playerName"] *@
+    <input class="inputText" type="text" id="playerName" maxlength="12" value="@randomNames[new Random().Next(0,randomNames.Length-1)]" placeholder="Имя игрока" required />
     <input class="commit-button" type="submit" value="Go!" style="margin: 10px 0.5rem 1rem 0.5rem;" onclick="Enter(playerName.value)" />
     <label class="error" id="WrongPlayerName" hidden="hidden" style="margin: 0 0.5rem 1rem 0.5rem;">Указанное имя не подходит</label>
 </div>
@@ -11,15 +38,16 @@
 <div id="Invite" class="invitation panel">
     <label id="InviteLabel" class="panel-title"></label>
     <div class="d-inline-flex" style="justify-content: center;">
-        <input class="commit-button" type="submit" value="Принять" style="margin: 10px 0.5rem 1rem 0.5rem;" onclick="AcceptInvitation();" />
-        <input class="delete-button" type="submit" value="Отклонить" style="margin: 10px 0.5rem 1rem 0.5rem;" onclick="DeclineInvitation();" />
+        <input class="commit-button" type="submit" value="Принять" style="margin: 10px 0.5rem 1rem 0.5rem;" onclick="AcceptInvite()" />
+        <input class="delete-button" type="submit" value="Отклонить" style="margin: 10px 0.5rem 1rem 0.5rem;" onclick="DeclineInvite()" />
     </div>
 
 </div>
 
 <div id="Main" class="center main" hidden="hidden">
-    <div>
+    <div style="display: flex; justify-content: space-between;">
         <h5 class="main-title">Игроки OnLine</h5>
+        <h5 class="main-title" id="playerNameLabel"></h5>
     </div>
     <div>
         <h5 class="main-title">Правила</h5>
@@ -94,10 +122,12 @@
 <script>
 
     let hubConnection;
-    let inviteSender;
+
     let me;
     let opponent;
+    let inviteSender; // Если инвайт пришел НАМ
 
+    // Вход
     function Enter(playerName) {
 
         let formData = new FormData();
@@ -126,27 +156,67 @@
 
     function Start() {
 
+        // Starting Connection--------------
         hubConnection = new signalR.HubConnectionBuilder()
             .withUrl('/playground')
             .build();
 
-        hubConnection.on("UpdatePlayerList", function (data) {
+        hubConnection.start().then(function () {
+            document.getElementById("Enter").hidden = true;
+            document.getElementById("Main").hidden = false;
+        });
+
+        // UpdateOnline-------------
+        hubConnection.on("UpdatePlayerList", function (players) {
             $('#PlayerList').empty();
-            $.each(data, function (i, player) {
-                if (player.id == hubConnection.connectionId) me = player;
-                else {
-                    $('#PlayerList')
-                        .append("<tr><td style='max-width:0'>" + player.name + " </td>" +
-                            "<td><input type='button' class='commit-button' style='float:right' value='Играть' onclick='Invite(`" + player.id + "`)'/></td></tr>");
+            let findMe = players.find(p => p.id == hubConnection.connectionId);
+            if (findMe != null) {
+                me = findMe;
+                document.getElementById('playerNameLabel').textContent = 'Я - ' + me.name;
+            }
+
+            $.each(players, function (i, player) {
+                if (player.id != hubConnection.connectionId) {
+                    if (me != null) {
+                        let disablePlayButton = (me.inviting || player.inviting) ? `disabled="disabled"` : '';
+
+                        let row = `<tr>
+                                    <td style="max-width:0"> ${player.name} </td>
+                                    <td>
+                                        <input type="button"
+                                               ${disablePlayButton}
+                                               class="commit-button"
+                                               style="float:right"
+                                               value="Играть"
+                                               onclick="Invite('${player.id}')"/>
+                                    </td>
+                              </tr>`;
+
+                        $('#PlayerList').append(row);
+                    }
                 }
+                
             });
         });
 
+        // Если нам пришел инвайт
         hubConnection.on("Invite", function (sender) {
             inviteSender = sender;
             document.getElementById('InviteLabel').textContent = 'Invite from - ' + sender.name;
             document.getElementById('Invite').classList.add("invitation-visible");
         });
+
+        // Если наш инвайт отклонили
+        hubConnection.on("InviteRejected", function () {
+            console.log("InviteRejected");
+        });
+
+        // Если наш инвайт не прошел
+        hubConnection.on("InviteFail", function () {
+            console.log("InviteFail");
+        });
+
+
 
         hubConnection.on("GameStarted", function (opponent) {
             document.getElementById("Main").hidden = true;
@@ -165,31 +235,43 @@
             document.getElementById('MyName').textContent = '';
             document.getElementById('OpponentName').textContent = '';
         });
-
-        hubConnection.start().then(function () {
-            document.getElementById("Main").hidden = false;
-            document.getElementById("Enter").hidden = true;
-        });
     }
 
+
+    // ЗАПРОСЫ----------------
     function FilterPlayerNames(nameFilter) {
-        if (hubConnection != null) hubConnection.invoke("FilterPlayerNames", nameFilter)
+        let trimmedAndLowered = nameFilter.toLowerCase().trim().replaceAll('\\', '');
+        if (trimmedAndLowered == '') CancelFiltering();
+        else if (hubConnection != null)
+            hubConnection.invoke("FilterPlayers", `Name.Tolower().Trim().StartsWith(\"${trimmedAndLowered}\")`); // Используем DynamicLinq
     }
 
-    function Invite(targetId) {
-        if (hubConnection != null) hubConnection.invoke("Invite", targetId)
+    function CancelFiltering() {
+        if (hubConnection != null)
+            hubConnection.invoke("CancelFiltering");
     }
 
-    function DeclineInvitation() {
+    function Invite(id) {
+        if (hubConnection != null) {
+            hubConnection.invoke("Invite", id);
+        }
+    }
+
+    function AcceptInvite() {
+        if (me == null || inviteSender == null) return;
+        if (hubConnection != null) hubConnection.invoke("AcceptInvite", inviteSender.id);
+        document.getElementById('Invite').classList.remove("invitation-visible");
+    }
+
+    function DeclineInvite() {
+        if (hubConnection != null) {
+            hubConnection.invoke("DeclineInvite", inviteSender.id);
+        }
         opponent = null;
         document.getElementById('Invite').classList.remove("invitation-visible");
     }
 
-    function AcceptInvitation() {
-        if (me == null || inviteSender == null) return;
-        if (hubConnection != null) hubConnection.invoke("StartGame", me.id, inviteSender.id);
-        document.getElementById('Invite').classList.remove("invitation-visible");
-    }
+
 
 
 </script>

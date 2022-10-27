@@ -11,6 +11,7 @@ using System.Linq.Dynamic.Core;
 
 namespace GameOfLIfe_StrDem.Hubs
 {
+
     public class PlaygroundHub : Hub
     {
         private readonly PlaygroundService _playgroundService;
@@ -68,7 +69,7 @@ namespace GameOfLIfe_StrDem.Hubs
             Player player = _playgroundService.GetPlayer(Context.ConnectionId);
             if (player != null)
             {
-                if (player.InGame)
+                if (player.GameId != null)
                 {
                     if (_playgroundService.Games.ContainsKey(player.GameId))
                         await StopGame(player.GameId);
@@ -83,7 +84,7 @@ namespace GameOfLIfe_StrDem.Hubs
         public async Task Invite(string targetId)
         {
             Player target = _playgroundService.GetPlayer(targetId);
-            if (target == null || target.Inviting || target.InGame)
+            if (target == null || target.Inviting || target.GameId != null)
             {
                 await Clients.Client(Context.ConnectionId).SendAsync("InviteFail");
                 return;
@@ -122,10 +123,7 @@ namespace GameOfLIfe_StrDem.Hubs
 
         public async Task StartGame(string inviteSenderId)
         {
-            // Здесь возможно не оч. хорошо что ответственность
-            // за создание и начало игры ложится на того, кто принимает инвайт, но я думаю пока так
-
-            Player initiator = _playgroundService.GetPlayer(Context.ConnectionId); // <- Я 
+            Player initiator = _playgroundService.GetPlayer(Context.ConnectionId); // <- Я (тот кто принял инвайт)
             Player inviteSender = _playgroundService.GetPlayer(inviteSenderId);
             if (initiator == null || inviteSender == null) return;
 
@@ -133,15 +131,16 @@ namespace GameOfLIfe_StrDem.Hubs
             {
                 Game game = new Game(initiator, inviteSender);
                 _playgroundService.Games.Add(initiator.Id, game);
-
-                initiator.InGame = inviteSender.InGame = true;
                 initiator.GameId = inviteSender.GameId = initiator.Id;
+
+                game.P1.Field.Clean();
+                game.P2.Field.Clean();
+
                 await Clients.Client(initiator.Id).SendAsync("GameStarted", inviteSender);
                 await Clients.Client(inviteSenderId).SendAsync("GameStarted", initiator);
             }
 
             await UpdatePlayersOnAllClients();
-            // Иначе можно было бы какой-то GameStartFailed на игроков отправить, но я не буду :)
         }
 
         public async Task StopGame(string gameId)
@@ -150,7 +149,6 @@ namespace GameOfLIfe_StrDem.Hubs
             {
                 Game game = _playgroundService.Games[gameId];
 
-                game.P1.InGame = game.P2.InGame = false;
                 game.P1.Inviting = game.P2.Inviting = false;
                 game.P1.GameId = game.P2.GameId = null;
 

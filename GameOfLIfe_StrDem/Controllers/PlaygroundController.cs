@@ -38,8 +38,10 @@ namespace GameOfLIfe_StrDem.Controllers
             if (string.IsNullOrEmpty(playerName) ||
                 string.IsNullOrWhiteSpace(playerName)) return Json("WrongName");
             playerName = playerName.Trim();
+
             var exist = _playgroundService.Players.FirstOrDefault(x => x.Name == playerName);
             if (exist != null) playerName = MakeUniqueName(playerName);
+
             HttpContext.Response.Cookies.Append("playerName", playerName);
             return Json("OK");
         }

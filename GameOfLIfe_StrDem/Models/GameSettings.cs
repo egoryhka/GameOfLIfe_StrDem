@@ -7,7 +7,7 @@ namespace GameOfLIfe_StrDem.Models
 {
     public static class GameSettings
     {
-        public static int FieldSize = 25;
+        public static int FieldSize = 15;
 
 
     }

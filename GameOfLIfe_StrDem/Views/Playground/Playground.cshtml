@@ -23,7 +23,7 @@
         "Рома",
         "Серёжа",
         "Стас",
-                    };
+                                                                                                                                                                    };
 }
 <a target="_blank" href="#">Новая вкладка</a>
 
@@ -41,7 +41,6 @@
         <input class="commit-button" type="submit" value="Принять" style="margin: 10px 0.5rem 1rem 0.5rem;" onclick="AcceptInvite()" />
         <input class="delete-button" type="submit" value="Отклонить" style="margin: 10px 0.5rem 1rem 0.5rem;" onclick="DeclineInvite()" />
     </div>
-
 </div>
 
 <div id="Main" class="center main" hidden="hidden">
@@ -100,15 +99,23 @@
 </div>
 
 
-<div id="Game" class="center game" hidden="hidden">
+<div id="Game" class="center game" @*hidden="hidden"*@>
 
     <div><h5 id="MyName" class="game-title"> </h5></div>
 
     <div><h5 id="OpponentName" class="game-title"> </h5></div>
 
-    <div id="MyField" class="field"> <canvas width="10" height="10" src="~/icons/">   </canvas>  </div>
+    <div class="field">
+        <div class="grid-background" style="width:350px; height:350px">
+            <canvas id="MyField" class="w-100" width="10" height="10"> </canvas>
+        </div>
+    </div>
 
-    <div id="OpponentField" class="field">  <canvas width="10" height="10">    </canvas>  </div>
+    <div class="field">
+        <div class="grid-background" style="width:350px; height:350px">
+            <canvas id="OpponentField" class="w-100" width="10" height="10">    </canvas>
+        </div>
+    </div>
 
     <div id="ReadyRow" class="ready-row">
         <div id="MyReady"> <input class="commit-button" type="button" id="myReadyBtn" value="Готов" /> </div>
@@ -117,6 +124,7 @@
     </div>
 
 </div>
+
 
 
 <script>
@@ -195,7 +203,7 @@
                         $('#PlayerList').append(row);
                     }
                 }
-                
+
             });
         });
 
@@ -272,6 +280,20 @@
     }
 
 
+    // Координаты курсора
+    $('#MyField').mousemove(function (e) {
+        var coord = getPosition(this, e);
+        console.log(coord);
+    });
 
+    function getPosition(elem, event) {
+        var target = elem.getBoundingClientRect();
+        let x = Math.round((event.clientX - target.left + 17.5) / 35);
+        let y = Math.round((event.clientY - target.top + 17.5) / 35);
+        return { x: x, y: y }
+    }
 
 </script>
+
+
+

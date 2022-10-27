@@ -150,10 +150,12 @@ body {
     background: #627862;
     display: flex;
     justify-content: center;
+    align-items: center;
 }
 
+
     .field canvas {
-        background: rgba(40, 40, 40, 0.4)
+        background: rgba(40, 40, 40, 0.4);
     }
 
     .field:nth-child(3n) {
@@ -165,6 +167,10 @@ body {
     }
 
 
+.grid-background {
+    background-image: linear-gradient(#ffffff 0.5px, transparent 0.5px), linear-gradient(to right, #ffffff 0.5px, transparent 0.5px);
+    background-size: 35px 35px ;
+}
 
 .players {
     width: 100%;

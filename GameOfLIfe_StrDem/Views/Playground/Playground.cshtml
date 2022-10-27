@@ -23,7 +23,7 @@
         "Рома",
         "Серёжа",
         "Стас",
-                                                                                                                                                                    };
+                                                                                                                                                                                                                                                                                                                                                            };
 }
 <a target="_blank" href="#">Новая вкладка</a>
 
@@ -280,18 +280,70 @@
     }
 
 
+    // Рисование начитается отсюда!
+    const canvas = document.getElementById("MyField");
+    const ctx = canvas.getContext("2d");
+    ctx.globalAlpha = 0.5;
+
+    let mousePressed = false;
+    let operationChanged = true;
+    let erase = true;
+    let lastCellCoord = { x: null, y: null };
+
+    //$('#MyField').mouseleave(function (e) {
+    //    mousePressed = false;
+    //});
+
+    $('#MyField').mouseup(function (e) {
+        mousePressed = false;
+    });
+
+    $('#MyField').mousedown(function (e) {
+        let c = getPosition(this, e);
+        let col = ctx.getImageData(c.x, c.y, 1, 1).data;
+        let exists = col[0] != 0 && col[1] != 0 && col[2] != 0;
+
+        mousePressed = true;
+        erase = exists;
+        operationChanged = true;
+    });
+
     // Координаты курсора
     $('#MyField').mousemove(function (e) {
-        var coord = getPosition(this, e);
-        console.log(coord);
+        let c = getPosition(this, e);
+        if (mousePressed && (operationChanged || (lastCellCoord.x != c.x || lastCellCoord.y != c.y))) {
+
+            let col = ctx.getImageData(c.x, c.y, 1, 1).data;
+            let exists = col[0] != 0 && col[1] != 0 && col[2] != 0;
+
+            if (erase) {
+                ctx.clearRect(c.x, c.y, 1, 1);
+            }
+            else{
+                ctx.fillStyle = exists ? "#00000000" : "#123456";
+                ctx.fillRect(c.x, c.y, 1, 1);
+            }
+
+            lastCellCoord.x = c.x;
+            lastCellCoord.y = c.y;
+            operationChanged = false;
+
+            console.log(c);
+        }
     });
+
+
+
 
     function getPosition(elem, event) {
         var target = elem.getBoundingClientRect();
-        let x = Math.round((event.clientX - target.left + 17.5) / 35);
-        let y = Math.round((event.clientY - target.top + 17.5) / 35);
+        let x = Math.round((event.clientX - target.left + 17.5) / 35) - 1;
+        let y = Math.round((event.clientY - target.top + 17.5) / 35) - 1;
         return { x: x, y: y }
     }
+
+
+
 
 </script>
 

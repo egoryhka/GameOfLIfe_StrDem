@@ -23,7 +23,7 @@
         "Рома",
         "Серёжа",
         "Стас",
-                                                                                                                                                                                                                                                                                                                                                            };
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            };
 }
 <a target="_blank" href="#">Новая вкладка</a>
 
@@ -73,11 +73,11 @@
             <img src="~/icons/mouse.gif" />
         </div>
         <div class="rule-block">
-            <p>На рисование дается - 30 секунд! </p>
+            <p>На рисование дается - 10 секунд! </p>
             <img src="~/icons/timer.gif" />
         </div>
         <div class="rule-block">
-            <p>После рисования - <u>Симуляция</u>! - 1 минута! </p>
+            <p>После рисования - <u>Симуляция</u>! - 30 секунд! </p>
             <img style="image-rendering: pixelated; " src="~/icons/glider.gif" />
         </div>
 
@@ -99,7 +99,7 @@
 </div>
 
 
-<div id="Game" class="center game" @*hidden="hidden"*@>
+<div id="Game" class="center game" hidden="hidden">
 
     <div><h5 id="MyName" class="game-title"> </h5></div>
 
@@ -118,10 +118,16 @@
     </div>
 
     <div id="ReadyRow" class="ready-row">
-        <div id="MyReady"> <input class="commit-button" type="button" id="myReadyBtn" value="Готов" /> </div>
-        <div id="Timer" class="timer"> 30:00  </div>
+        <div id="MyReady"> <input class="commit-button" type="button" id="myReadyBtn" value="Готов" onclick="Start3sTimer()" /> </div>
+        <div id="10sTimer" class="timer"> 10 </div>
         <div id="OpponentReady"> <input class="commit-button" type="button" disabled="disabled" id="opponentReadyBtn" value="Готов" style="" /> </div>
     </div>
+
+    <label class="center timer-3" id="TimerLabel" hidden="hidden"></label>
+
+    @*<div id="3sTimer" class="center timer-3" hidden="hidden">
+        <label id="TimerLabel"></label>
+    </div>*@
 
 </div>
 
@@ -279,20 +285,84 @@
         document.getElementById('Invite').classList.remove("invitation-visible");
     }
 
+    var timer = 0;
+    function StartTimer(seconds, onTick, callback) {
+        timer = seconds;
+        onTick();
+
+        let t = setInterval(function () {
+            timer--;
+            onTick();
+            if (timer == 0) {
+                clearInterval(t);
+                callback();
+            }
+        }, 1000);
+    }
+
+    function Start3sTimer() {
+        $('#TimerLabel').text('');
+        document.getElementById('TimerLabel').hidden = false;
+
+        StartTimer(3,
+            () => $('#TimerLabel').text(timer),
+            () => {
+                $('#TimerLabel').text('Go!');
+                StartTimer(1, () => { }, () => {
+                    document.getElementById('TimerLabel').hidden = true;
+                    Start10sTimer();
+                });
+            });
+    }
+
+    function Start10sTimer() {
+        StartTimer(10,
+            () => $('#10sTimer').text(timer),
+            () => {
+                document.getElementById('TimerLabel').hidden = false;
+                $('#TimerLabel').text('Время вышло!');
+                StartTimer(1, () => { }, () => {
+                    document.getElementById('TimerLabel').hidden = true;
+                    StartSimulation(); // Старт!
+                });
+            }
+        );
+    }
+
+    function Start30sTimer() {
+        StartTimer(30,
+            () => $('#10sTimer').text(timer),
+            () => {
+                document.getElementById('TimerLabel').hidden = false;
+                $('#TimerLabel').text('Конец симуляции!');
+                StartTimer(1, () => { }, () => {
+                    $('#TimerLabel').text('');
+                });
+            }
+        );
+    }
+
+    function StartSimulation() {
+        Start30sTimer();
+
+    }
+
 
     // Рисование начитается отсюда!
     const canvas = document.getElementById("MyField");
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     ctx.globalAlpha = 0.5;
+    ctx.fillStyle = "#123456";
 
     let mousePressed = false;
     let operationChanged = true;
     let erase = true;
     let lastCellCoord = { x: null, y: null };
 
-    //$('#MyField').mouseleave(function (e) {
-    //    mousePressed = false;
-    //});
+
+    $('#MyField').mouseleave(function (e) {
+        mousePressed = false;
+    });
 
     $('#MyField').mouseup(function (e) {
         mousePressed = false;
@@ -306,32 +376,37 @@
         mousePressed = true;
         erase = exists;
         operationChanged = true;
+
+        EditField(c);
     });
 
     // Координаты курсора
     $('#MyField').mousemove(function (e) {
         let c = getPosition(this, e);
+        EditField(c);
+    });
+
+
+    function EditField(c) {
         if (mousePressed && (operationChanged || (lastCellCoord.x != c.x || lastCellCoord.y != c.y))) {
 
             let col = ctx.getImageData(c.x, c.y, 1, 1).data;
             let exists = col[0] != 0 && col[1] != 0 && col[2] != 0;
 
-            if (erase) {
+            if (exists && erase) {
                 ctx.clearRect(c.x, c.y, 1, 1);
+                console.log(c);
             }
-            else{
-                ctx.fillStyle = exists ? "#00000000" : "#123456";
+            else if (!exists && !erase) {
                 ctx.fillRect(c.x, c.y, 1, 1);
+                console.log(c);
             }
 
             lastCellCoord.x = c.x;
             lastCellCoord.y = c.y;
             operationChanged = false;
-
-            console.log(c);
         }
-    });
-
+    }
 
 
 

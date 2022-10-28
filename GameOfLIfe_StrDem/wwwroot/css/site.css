@@ -144,6 +144,18 @@ body {
     padding: 0.4rem;
     border-radius: 3px;
     background: #009688;
+    min-width:100px;
+    user-select:none;
+}
+
+.timer-3 {
+    display: flex;
+    background: #000e0d9c;
+    color: whitesmoke;
+    align-items: center;
+    justify-content: center;
+    font-size: 100px;
+    user-select: none;
 }
 
 .field {
@@ -152,11 +164,13 @@ body {
     justify-content: center;
     align-items: center;
     image-rendering: pixelated;
+    user-select: none;
 }
 
 
     .field canvas {
         background: rgba(40, 40, 40, 0.4);
+        user-select: none;
     }
 
     .field:nth-child(3n) {
@@ -170,7 +184,7 @@ body {
 
 .grid-background {
     background-image: linear-gradient(#ffffff 0.5px, transparent 0.5px), linear-gradient(to right, #ffffff 0.5px, transparent 0.5px);
-    background-size: 35px 35px ;
+    background-size: 35px 35px;
 }
 
 .players {

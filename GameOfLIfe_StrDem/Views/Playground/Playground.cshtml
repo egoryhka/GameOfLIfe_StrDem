@@ -23,7 +23,7 @@
         "Рома",
         "Серёжа",
         "Стас",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            };
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    };
 }
 <a target="_blank" href="#">Новая вкладка</a>
 
@@ -118,16 +118,12 @@
     </div>
 
     <div id="ReadyRow" class="ready-row">
-        <div id="MyReady"> <input class="commit-button" type="button" id="myReadyBtn" value="Готов" onclick="Start3sTimer()" /> </div>
+        <div id="MyReady"> <input class="commit-button" type="button" id="myReadyBtn" value="Готов" onclick="Ready()" /> </div>
         <div id="10sTimer" class="timer"> 10 </div>
-        <div id="OpponentReady"> <input class="commit-button" type="button" disabled="disabled" id="opponentReadyBtn" value="Готов" style="" /> </div>
+        <div id="OpponentReady"> <input class="commit-button" type="button" disabled="disabled" id="opponentReadyBtn" value="Готов" /> </div>
     </div>
 
-    <label class="center timer-3" id="TimerLabel" hidden="hidden"></label>
-
-    @*<div id="3sTimer" class="center timer-3" hidden="hidden">
-        <label id="TimerLabel"></label>
-    </div>*@
+    <label class="center overlay-label" id="OverlayLabel" hidden="hidden"></label>
 
 </div>
 
@@ -230,9 +226,32 @@
             console.log("InviteFail");
         });
 
+        // Противник готов
+        hubConnection.on("MeReady", function () {
+            console.log("MeReady");
+            me.ready = true;
+        });
+
+        // Противник готов
+        hubConnection.on("OpponentReady", function () {
+            console.log("OpponentReady");
+            document.getElementById('opponentReadyBtn').classList.add('highlight');
+        });
+
+        // Отсчет 3с
+        hubConnection.on("StartCountDown3", function () {
+            Start3sTimer();
+        });
+
+        // Отсчет 3с завершен
+        hubConnection.on("StopCountDown3", function () {
+            document.getElementById('OverlayLabel').hidden = true;
+            canEditField = true;
+            Start10sTimer();
+        });
 
 
-        hubConnection.on("GameStarted", function (opponent) {
+        hubConnection.on("GameCreated", function (opponent) {
             document.getElementById("Main").hidden = true;
             document.getElementById("Game").hidden = false;
             inviteSender = null;
@@ -248,6 +267,10 @@
 
             document.getElementById('MyName').textContent = '';
             document.getElementById('OpponentName').textContent = '';
+
+            document.getElementById('myReadyBtn').classList.remove('highlight');
+            document.getElementById('myReadyBtn').disabled = false;
+            document.getElementById('opponentReadyBtn').classList.remove('highlight');
         });
     }
 
@@ -255,34 +278,43 @@
     // ЗАПРОСЫ----------------
     function FilterPlayerNames(nameFilter) {
         let trimmedAndLowered = nameFilter.toLowerCase().trim().replaceAll('\\', '');
+
         if (trimmedAndLowered == '') CancelFiltering();
-        else if (hubConnection != null)
+        else if (hubConnection)
             hubConnection.invoke("FilterPlayers", `Name.Tolower().Trim().StartsWith(\"${trimmedAndLowered}\")`); // Используем DynamicLinq
     }
 
     function CancelFiltering() {
-        if (hubConnection != null)
+        if (hubConnection)
             hubConnection.invoke("CancelFiltering");
     }
 
     function Invite(id) {
-        if (hubConnection != null) {
+        if (hubConnection) {
             hubConnection.invoke("Invite", id);
         }
     }
 
     function AcceptInvite() {
         if (me == null || inviteSender == null) return;
-        if (hubConnection != null) hubConnection.invoke("AcceptInvite", inviteSender.id);
+        if (hubConnection) hubConnection.invoke("AcceptInvite", inviteSender.id);
         document.getElementById('Invite').classList.remove("invitation-visible");
     }
 
     function DeclineInvite() {
-        if (hubConnection != null) {
+        if (hubConnection) {
             hubConnection.invoke("DeclineInvite", inviteSender.id);
         }
         opponent = null;
         document.getElementById('Invite').classList.remove("invitation-visible");
+    }
+
+    function Ready() {
+        if (hubConnection && !me.ready) {
+            hubConnection.invoke("Ready");
+            document.getElementById('myReadyBtn').disabled = true;
+            document.getElementById('myReadyBtn').classList.add('highlight');
+        }
     }
 
     var timer = 0;
@@ -301,17 +333,13 @@
     }
 
     function Start3sTimer() {
-        $('#TimerLabel').text('');
-        document.getElementById('TimerLabel').hidden = false;
+        $('#OverlayLabel').text('');
+        document.getElementById('OverlayLabel').hidden = false;
 
         StartTimer(3,
-            () => $('#TimerLabel').text(timer),
+            () => $('#OverlayLabel').text(timer),
             () => {
-                $('#TimerLabel').text('Go!');
-                StartTimer(1, () => { }, () => {
-                    document.getElementById('TimerLabel').hidden = true;
-                    Start10sTimer();
-                });
+                $('#OverlayLabel').text('Go!');
             });
     }
 
@@ -319,10 +347,12 @@
         StartTimer(10,
             () => $('#10sTimer').text(timer),
             () => {
-                document.getElementById('TimerLabel').hidden = false;
-                $('#TimerLabel').text('Время вышло!');
+                document.getElementById('OverlayLabel').hidden = false;
+                $('#OverlayLabel').text('Время вышло!');
+                canEditField = false; // делать это при сообщении с хаба
+
                 StartTimer(1, () => { }, () => {
-                    document.getElementById('TimerLabel').hidden = true;
+                    document.getElementById('OverlayLabel').hidden = true;
                     StartSimulation(); // Старт!
                 });
             }
@@ -333,10 +363,10 @@
         StartTimer(30,
             () => $('#10sTimer').text(timer),
             () => {
-                document.getElementById('TimerLabel').hidden = false;
-                $('#TimerLabel').text('Конец симуляции!');
+                document.getElementById('OverlayLabel').hidden = false;
+                $('#OverlayLabel').text('Конец симуляции!');
                 StartTimer(1, () => { }, () => {
-                    $('#TimerLabel').text('');
+                    $('#OverlayLabel').text('');
                 });
             }
         );
@@ -354,6 +384,7 @@
     ctx.globalAlpha = 0.5;
     ctx.fillStyle = "#123456";
 
+    var canEditField = false;
     let mousePressed = false;
     let operationChanged = true;
     let erase = true;
@@ -388,7 +419,7 @@
 
 
     function EditField(c) {
-        if (mousePressed && (operationChanged || (lastCellCoord.x != c.x || lastCellCoord.y != c.y))) {
+        if (canEditField && mousePressed && (operationChanged || (lastCellCoord.x != c.x || lastCellCoord.y != c.y))) {
 
             let col = ctx.getImageData(c.x, c.y, 1, 1).data;
             let exists = col[0] != 0 && col[1] != 0 && col[2] != 0;

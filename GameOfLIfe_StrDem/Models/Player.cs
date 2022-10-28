@@ -15,6 +15,7 @@ namespace GameOfLIfe_StrDem.Models
 
         public bool Inviting { get; set; }
         public bool Filtering { get; set; }
+        public bool Ready { get; set; }
 
         public Player(string id, string name)
         {

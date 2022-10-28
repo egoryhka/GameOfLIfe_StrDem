@@ -144,11 +144,11 @@ body {
     padding: 0.4rem;
     border-radius: 3px;
     background: #009688;
-    min-width:100px;
-    user-select:none;
+    min-width: 100px;
+    user-select: none;
 }
 
-.timer-3 {
+.overlay-label {
     display: flex;
     background: #000e0d9c;
     color: whitesmoke;
@@ -230,6 +230,8 @@ body {
         height: 50px;
     }
 
+
+
 .commit-button {
     height: min-content;
     user-select: none;
@@ -295,4 +297,10 @@ body {
     text-align: center;
     margin: 0.5rem;
     background: rgb(188 207 229);
+}
+
+
+.highlight {
+    background: #32953d !important;
+    box-shadow: 0px 0px 20px 0px #32953d !important;
 }

@@ -102,7 +102,7 @@ namespace GameOfLIfe_StrDem.Hubs
 
         public async Task AcceptInvite(string inviteSenderId)
         {
-            await StartGame(inviteSenderId);
+            await CreateGame(inviteSenderId);
         }
 
         public async Task DeclineInvite(string inviteSenderId)
@@ -121,7 +121,32 @@ namespace GameOfLIfe_StrDem.Hubs
             await UpdatePlayersOnAllClients();
         }
 
-        public async Task StartGame(string inviteSenderId)
+        public async Task Ready()
+        {
+            Player me = _playgroundService.GetPlayer(Context.ConnectionId);
+            if (me != null && me.GameId != null && _playgroundService.Games.ContainsKey(me.GameId))
+            {
+                Game game = _playgroundService.Games[me.GameId];
+                Player opponent = game.GetOpponent(me);
+                if (opponent != null)
+                {
+                    me.Ready = true;
+                    await Clients.Caller.SendAsync("MeReady");
+                    await Clients.Client(opponent.Id).SendAsync("OpponentReady");
+                }
+
+                if (game.P1.Ready && game.P2.Ready)
+                {
+                    await Clients.Clients(game.P1.Id, game.P2.Id).SendAsync("StartCountDown3");
+
+                    // сделать планировщиком! 
+                    //await Clients.Clients(game.P1.Id, game.P2.Id).SendAsync("StopCountDown3");
+
+                }
+            }
+        }
+
+        public async Task CreateGame(string inviteSenderId)
         {
             Player initiator = _playgroundService.GetPlayer(Context.ConnectionId); // <- Я (тот кто принял инвайт)
             Player inviteSender = _playgroundService.GetPlayer(inviteSenderId);
@@ -136,8 +161,8 @@ namespace GameOfLIfe_StrDem.Hubs
                 game.P1.Field.Clean();
                 game.P2.Field.Clean();
 
-                await Clients.Client(initiator.Id).SendAsync("GameStarted", inviteSender);
-                await Clients.Client(inviteSenderId).SendAsync("GameStarted", initiator);
+                await Clients.Client(initiator.Id).SendAsync("GameCreated", inviteSender);
+                await Clients.Client(inviteSenderId).SendAsync("GameCreated", initiator);
             }
 
             await UpdatePlayersOnAllClients();
@@ -150,6 +175,7 @@ namespace GameOfLIfe_StrDem.Hubs
                 Game game = _playgroundService.Games[gameId];
 
                 game.P1.Inviting = game.P2.Inviting = false;
+                game.P1.Ready = game.P2.Ready = false;
                 game.P1.GameId = game.P2.GameId = null;
 
                 if (_playgroundService.Players.FirstOrDefault(x => x.Id == game.P1.Id) != null)

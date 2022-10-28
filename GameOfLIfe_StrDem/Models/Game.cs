@@ -16,5 +16,7 @@ namespace GameOfLIfe_StrDem.Models
 
         }
 
+        public Player GetOpponent(Player me) => P1 == me ? P2 : P1;
+
     }
 }

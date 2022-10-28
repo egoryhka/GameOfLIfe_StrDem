@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using GameOfLIfe_StrDem.Models;
 using Microsoft.AspNetCore.Authorization;
 using System.Linq.Dynamic.Core;
-
+using Hangfire;
 
 namespace GameOfLIfe_StrDem.Hubs
 {
@@ -137,14 +137,37 @@ namespace GameOfLIfe_StrDem.Hubs
 
                 if (game.P1.Ready && game.P2.Ready)
                 {
-                    await Clients.Clients(game.P1.Id, game.P2.Id).SendAsync("StartCountDown3");
+                    await SendStartCountDown(game.P1, game.P2, 3);
+                    string countDownJob3 = BackgroundJob.Schedule(() => SendStopCountDown(game.P1, game.P2, 3), TimeSpan.FromSeconds(3));
 
-                    // сделать планировщиком! 
-                    //await Clients.Clients(game.P1.Id, game.P2.Id).SendAsync("StopCountDown3");
+                    string countDownAfter3 = BackgroundJob.ContinueJobWith(countDownJob3,
+                          () => BackgroundJob.Schedule(() => SendStartCountDown(game.P1, game.P2, 10), TimeSpan.FromSeconds(1)));
+
+                    string countDownJob10 = BackgroundJob.ContinueJobWith(countDownAfter3,
+                       () => BackgroundJob.Schedule(() => SendStopCountDown(game.P1, game.P2, 10), TimeSpan.FromSeconds(10)));
+
+                    string countDownAfter10 = BackgroundJob.ContinueJobWith(countDownJob10,
+                          () => BackgroundJob.Schedule(() => SendStartCountDown(game.P1, game.P2, 30), TimeSpan.FromSeconds(1)));
+
+                    string countDownJob30 = BackgroundJob.ContinueJobWith(countDownAfter10,
+                       () => BackgroundJob.Schedule(() => SendStopCountDown(game.P1, game.P2, 30), TimeSpan.FromSeconds(30)));
 
                 }
             }
         }
+
+        public async Task SendStartCountDown(Player p1, Player p2, int sec)
+        {
+            if (p1 != null && p2 != null)
+                await Clients.Clients(p1.Id, p2.Id).SendAsync("StartCountDown" + sec.ToString());
+        }
+
+        public async Task SendStopCountDown(Player p1, Player p2, int sec)
+        {
+            if (p1 != null && p2 != null)
+                await Clients.Clients(p1.Id, p2.Id).SendAsync("StopCountDown" + sec.ToString());
+        }
+
 
         public async Task CreateGame(string inviteSenderId)
         {

@@ -12,6 +12,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Hangfire;
+using Hangfire.SqlServer;
 
 namespace GameOfLIfe_StrDem
 {
@@ -27,6 +29,10 @@ namespace GameOfLIfe_StrDem
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            string hangFireConnectionString = Configuration.GetConnectionString("HangfireConnection");
+            services.AddHangfire(h => h.UseSqlServerStorage(hangFireConnectionString));
+            services.AddHangfireServer();
+
             services.AddSingleton<PlaygroundService>();
 
             services.AddSignalR();

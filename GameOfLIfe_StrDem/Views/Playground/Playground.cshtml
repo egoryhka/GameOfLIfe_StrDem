@@ -238,17 +238,50 @@
             document.getElementById('opponentReadyBtn').classList.add('highlight');
         });
 
-        // Отсчет 3с
+        // Отсчет 3с старт
         hubConnection.on("StartCountDown3", function () {
-            Start3sTimer();
+            //Start3sTimer();
+            console.log("Отсчет 3с старт");
         });
 
         // Отсчет 3с завершен
         hubConnection.on("StopCountDown3", function () {
-            document.getElementById('OverlayLabel').hidden = true;
-            canEditField = true;
-            Start10sTimer();
+            //document.getElementById('OverlayLabel').hidden = true;
+            //canEditField = true;
+            //Start10sTimer();
+
+            console.log("Отсчет 3с завершен");
         });
+
+
+        // Отсчет 10с старт
+        hubConnection.on("StartCountDown10", function () {
+
+            console.log("Отсчет 10с старт");
+        });
+
+        // Отсчет 10с завершен
+        hubConnection.on("StopCountDown10", function () {
+
+            console.log("Отсчет 10с завершен");
+        });
+
+
+        // Отсчет 30с старт
+        hubConnection.on("StartCountDown30", function () {
+
+            console.log("Отсчет 30с старт");
+        });
+
+        // Отсчет 30с завершен
+        hubConnection.on("StopCountDown30", function () {
+
+            console.log("Отсчет 30с завершен");
+        });
+
+
+
+
 
 
         hubConnection.on("GameCreated", function (opponent) {

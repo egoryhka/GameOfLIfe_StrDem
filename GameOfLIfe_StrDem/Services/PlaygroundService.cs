@@ -1,4 +1,6 @@
-﻿using GameOfLIfe_StrDem.Models;
+﻿using GameOfLIfe_StrDem.Hubs;
+using GameOfLIfe_StrDem.Models;
+using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,6 +46,7 @@ namespace GameOfLIfe_StrDem.Services
             new Player("","5.R.S.H T"),
             new Player("","OMMY NINETANNameLongNameLongNameLongNameLongNameLong"),
         };
+
 
         public Player GetPlayer(string Id) => Players.FirstOrDefault(x => x.Id == Id);
     }

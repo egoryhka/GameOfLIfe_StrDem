@@ -14,6 +14,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Hangfire;
 using Hangfire.SqlServer;
+using Hangfire.MemoryStorage;
 
 namespace GameOfLIfe_StrDem
 {
@@ -29,9 +30,15 @@ namespace GameOfLIfe_StrDem
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            string hangFireConnectionString = Configuration.GetConnectionString("HangfireConnection");
-            services.AddHangfire(h => h.UseSqlServerStorage(hangFireConnectionString));
-            services.AddHangfireServer();
+            // Вариант с хранилищем - базой не подходит.
+            //string hangFireConnectionString = Configuration.GetConnectionString("HangfireConnection");
+            //services.AddHangfire(h => h.UseSqlServerStorage(hangFireConnectionString));
+
+            services.AddHangfire(h => h.UseMemoryStorage());
+            services.AddHangfireServer(option =>
+            {
+                option.SchedulePollingInterval = TimeSpan.FromSeconds(1);
+            });
 
             services.AddSingleton<PlaygroundService>();
 
@@ -59,12 +66,15 @@ namespace GameOfLIfe_StrDem
 
             app.UseAuthorization();
 
+            app.UseHangfireDashboard();
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(
                       name: "default",
                       pattern: "{controller=Playground}/{action=Playground}/{id?}");
 
+                endpoints.MapHangfireDashboard();
                 endpoints.MapHub<PlaygroundHub>("/playground");
             });
 

@@ -23,9 +23,10 @@
         "Рома",
         "Серёжа",
         "Стас",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    };
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            };
 }
 <a target="_blank" href="#">Новая вкладка</a>
+<a target="_blank" style="float:right" href="https://localhost:44310/hangfire">hangfire</a>
 
 <div id="Enter" class="center enter panel">
     <label class="panel-title">Play as Guest</label>
@@ -122,10 +123,9 @@
         <div id="10sTimer" class="timer"> 10 </div>
         <div id="OpponentReady"> <input class="commit-button" type="button" disabled="disabled" id="opponentReadyBtn" value="Готов" /> </div>
     </div>
-
-    <label class="center overlay-label" id="OverlayLabel" hidden="hidden"></label>
-
 </div>
+
+<label class="center overlay-label" id="OverlayLabel" hidden="hidden"></label>
 
 
 
@@ -240,16 +240,15 @@
 
         // Отсчет 3с старт
         hubConnection.on("StartCountDown3", function () {
-            //Start3sTimer();
+            Start3sTimer();
             console.log("Отсчет 3с старт");
         });
 
         // Отсчет 3с завершен
         hubConnection.on("StopCountDown3", function () {
-            //document.getElementById('OverlayLabel').hidden = true;
-            //canEditField = true;
-            //Start10sTimer();
-
+            document.getElementById('OverlayLabel').hidden = true;
+            canEditField = true;
+            Start10sTimer();
             console.log("Отсчет 3с завершен");
         });
 

@@ -8,6 +8,9 @@ using GameOfLIfe_StrDem.Models;
 using Microsoft.AspNetCore.Authorization;
 using System.Linq.Dynamic.Core;
 using Hangfire;
+using System.Threading;
+using Hangfire.Common;
+using System.Reflection;
 
 namespace GameOfLIfe_StrDem.Hubs
 {
@@ -15,10 +18,12 @@ namespace GameOfLIfe_StrDem.Hubs
     public class PlaygroundHub : Hub
     {
         private readonly PlaygroundService _playgroundService;
+        private readonly IHubContext<PlaygroundHub> _hubContext;
 
-        public PlaygroundHub(PlaygroundService playgroundService)
+        public PlaygroundHub(PlaygroundService playgroundService, IHubContext<PlaygroundHub> hubContext)
         {
             _playgroundService = playgroundService;
+            _hubContext = hubContext;
         }
         private async Task UpdatePlayersOnAllClients()
         {
@@ -137,35 +142,37 @@ namespace GameOfLIfe_StrDem.Hubs
 
                 if (game.P1.Ready && game.P2.Ready)
                 {
-                    await SendStartCountDown(game.P1, game.P2, 3);
-                    string countDownJob3 = BackgroundJob.Schedule(() => SendStopCountDown(game.P1, game.P2, 3), TimeSpan.FromSeconds(3));
+                    await SendStartCountDown(game.P1.Id, game.P2.Id, 3);
+                    string countDownJob3 = BackgroundJob.Schedule(() => SendStopCountDown(game.P1.Id, game.P2.Id, 3), TimeSpan.FromSeconds(3));
 
                     string countDownAfter3 = BackgroundJob.ContinueJobWith(countDownJob3,
-                          () => BackgroundJob.Schedule(() => SendStartCountDown(game.P1, game.P2, 10), TimeSpan.FromSeconds(1)));
+                          () => BackgroundJob.Schedule(() => SendStartCountDown(game.P1.Id, game.P2.Id, 10), TimeSpan.FromSeconds(1)));
 
                     string countDownJob10 = BackgroundJob.ContinueJobWith(countDownAfter3,
-                       () => BackgroundJob.Schedule(() => SendStopCountDown(game.P1, game.P2, 10), TimeSpan.FromSeconds(10)));
+                       () => BackgroundJob.Schedule(() => SendStopCountDown(game.P1.Id, game.P2.Id, 10), TimeSpan.FromSeconds(10)));
 
                     string countDownAfter10 = BackgroundJob.ContinueJobWith(countDownJob10,
-                          () => BackgroundJob.Schedule(() => SendStartCountDown(game.P1, game.P2, 30), TimeSpan.FromSeconds(1)));
+                          () => BackgroundJob.Schedule(() => SendStartCountDown(game.P1.Id, game.P2.Id, 30), TimeSpan.FromSeconds(1)));
 
                     string countDownJob30 = BackgroundJob.ContinueJobWith(countDownAfter10,
-                       () => BackgroundJob.Schedule(() => SendStopCountDown(game.P1, game.P2, 30), TimeSpan.FromSeconds(30)));
+                       () => BackgroundJob.Schedule(() => SendStopCountDown(game.P1.Id, game.P2.Id, 30), TimeSpan.FromSeconds(30)));
 
+                    
                 }
             }
         }
 
-        public async Task SendStartCountDown(Player p1, Player p2, int sec)
+
+        public async Task SendStartCountDown(string id1, string id2, int sec)
         {
-            if (p1 != null && p2 != null)
-                await Clients.Clients(p1.Id, p2.Id).SendAsync("StartCountDown" + sec.ToString());
+            try { await _hubContext.Clients.Clients(id1, id2).SendAsync("StartCountDown" + sec.ToString()); }
+            catch { Console.WriteLine(string.Join(", ", _hubContext.Clients.All)); }
         }
 
-        public async Task SendStopCountDown(Player p1, Player p2, int sec)
+        public async Task SendStopCountDown(string id1, string id2, int sec)
         {
-            if (p1 != null && p2 != null)
-                await Clients.Clients(p1.Id, p2.Id).SendAsync("StopCountDown" + sec.ToString());
+            try { await _hubContext.Clients.Clients(id1, id2).SendAsync("StopCountDown" + sec.ToString()); }
+            catch { Console.WriteLine(string.Join(", ", _hubContext.Clients.All)); }
         }
 
 

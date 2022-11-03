@@ -24,7 +24,7 @@ namespace GameOfLIfe_StrDem
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            string hangFireConnectionString = Configuration.GetConnectionString("HangfireConnection");
+            string hangFireConnectionString = Configuration.GetConnectionString("SomeeHangFireConnection");
             services.AddHangfire(h => h.UseSqlServerStorage(hangFireConnectionString));
             services.AddHangfireServer(option =>
             {

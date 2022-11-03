@@ -23,7 +23,7 @@
         "Рома",
         "Серёжа",
         "Стас",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            };
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    };
 }
 <a target="_blank" href="#">Новая вкладка</a>
 <a target="_blank" style="float:right" href="https://localhost:44310/hangfire">hangfire</a>
@@ -59,6 +59,9 @@
                     <th>
                         <label style="margin: 0.5rem;">Имя</label>
                     </th>
+                    <th>
+                        <label style="margin: 0.5rem;">Рейтинг</label>
+                    </th>
                     <th width="25%">
                         <input class="inputText" style="float:right" type="text" id="nameFilter" value="" placeholder="имя..." oninput="FilterPlayerNames(this.value)" />
                     </th>
@@ -74,11 +77,11 @@
             <img src="~/icons/mouse.gif" />
         </div>
         <div class="rule-block">
-            <p>На рисование дается - 10 секунд! </p>
+            <p>На рисование дается - @GameSettings.DrawTime секунд! </p>
             <img src="~/icons/timer.gif" />
         </div>
         <div class="rule-block">
-            <p>После рисования - <u>Симуляция</u>! - 30 секунд! </p>
+            <p>После рисования - <u>Симуляция</u>! - @GameSettings.SimTime секунд! </p>
             <img style="image-rendering: pixelated; " src="~/icons/glider.gif" />
         </div>
 
@@ -120,7 +123,7 @@
 
     <div id="ReadyRow" class="ready-row">
         <div id="MyReady"> <input class="commit-button" type="button" id="myReadyBtn" value="Готов" onclick="Ready()" /> </div>
-        <div id="10sTimer" class="timer"> 10 </div>
+        <div id="Timer" class="timer"> 0 </div>
         <div id="OpponentReady"> <input class="commit-button" type="button" disabled="disabled" id="opponentReadyBtn" value="Готов" /> </div>
     </div>
 </div>
@@ -192,6 +195,7 @@
 
                         let row = `<tr>
                                     <td style="max-width:0"> ${player.name} </td>
+                                    <td style="max-width:0"> ${player.points} </td>
                                     <td>
                                         <input type="button"
                                                ${disablePlayButton}
@@ -238,50 +242,42 @@
             document.getElementById('opponentReadyBtn').classList.add('highlight');
         });
 
-        // Отсчет 3с старт
-        hubConnection.on("StartCountDown3", function () {
+        // Отсчет 3с
+        hubConnection.on("CountDown3", function () {
             Start3sTimer();
-            console.log("Отсчет 3с старт");
+            console.log("Отсчет 3с");
         });
 
-        // Отсчет 3с завершен
-        hubConnection.on("StopCountDown3", function () {
-            document.getElementById('OverlayLabel').hidden = true;
-            canEditField = true;
-            Start10sTimer();
-            console.log("Отсчет 3с завершен");
+        // Отсчет Draw
+        hubConnection.on("CountDownDraw", function (time) {
+            StartDrawTimer(time);
+            console.log("Отсчет Draw");
         });
 
-
-        // Отсчет 10с старт
-        hubConnection.on("StartCountDown10", function () {
-
-            console.log("Отсчет 10с старт");
+        // Отсчет Sim
+        hubConnection.on("CountDownSim", function (time) {
+            StartSimTimer(time);
+            console.log("Отсчет Sim");
         });
 
-        // Отсчет 10с завершен
-        hubConnection.on("StopCountDown10", function () {
-
-            console.log("Отсчет 10с завершен");
+        // Победитель выбран
+        hubConnection.on("WinnerIs", function (winner) {
+            if (winner) $('#OverlayLabel').text('Победитель - ' + winner.name);
+            else $('#OverlayLabel').text('Ничья!');
+            StartTimer(3, () => { }, () => {
+                if (hubConnection) hubConnection.invoke("NextGameState");
+            });
         });
 
-
-        // Отсчет 30с старт
-        hubConnection.on("StartCountDown30", function () {
-
-            console.log("Отсчет 30с старт");
+        // Противник рисует
+        hubConnection.on("OpponentDraw", function (x, y, alive) {
+            OpponentDraw(x, y, alive);
         });
 
-        // Отсчет 30с завершен
-        hubConnection.on("StopCountDown30", function () {
-
-            console.log("Отсчет 30с завершен");
+        hubConnection.on("UpdateFields", function (myField, opField) {
+            UpdateMyField(myField);
+            UpdateOpponentField(opField);
         });
-
-
-
-
-
 
         hubConnection.on("GameCreated", function (opponent) {
             document.getElementById("Main").hidden = true;
@@ -293,9 +289,13 @@
         });
 
         hubConnection.on("GameStoped", function () {
-            document.getElementById("Main").hidden = false;
-            document.getElementById("Game").hidden = true;
             opponent = null;
+            ClearField(); ClearOpField();
+            ResetTimer();
+
+            console.log("Конец игры");
+            document.getElementById('Main').hidden = false;
+            document.getElementById('Game').hidden = true;
 
             document.getElementById('MyName').textContent = '';
             document.getElementById('OpponentName').textContent = '';
@@ -350,11 +350,13 @@
     }
 
     var timer = 0;
+    var t;
+
     function StartTimer(seconds, onTick, callback) {
         timer = seconds;
         onTick();
 
-        let t = setInterval(function () {
+        t = setInterval(function () {
             timer--;
             onTick();
             if (timer == 0) {
@@ -364,49 +366,58 @@
         }, 1000);
     }
 
-    function Start3sTimer() {
+    function ResetTimer() {
+        timer = 0;
+        clearInterval(t);
+        document.getElementById('OverlayLabel').hidden = true;
         $('#OverlayLabel').text('');
+    }
+
+    function Start3sTimer() {
         document.getElementById('OverlayLabel').hidden = false;
+        $('#OverlayLabel').text('');
 
         StartTimer(3,
             () => $('#OverlayLabel').text(timer),
             () => {
                 $('#OverlayLabel').text('Go!');
+                StartTimer(1, () => { }, () => {
+                    if (hubConnection) hubConnection.invoke("NextGameState");
+                });
             });
     }
 
-    function Start10sTimer() {
-        StartTimer(10,
-            () => $('#10sTimer').text(timer),
+    function StartDrawTimer(time) {
+        document.getElementById('OverlayLabel').hidden = true;
+        canEditField = true;
+
+        StartTimer(time,
+            () => $('#Timer').text(timer),
             () => {
                 document.getElementById('OverlayLabel').hidden = false;
+                canEditField = false;
                 $('#OverlayLabel').text('Время вышло!');
-                canEditField = false; // делать это при сообщении с хаба
-
+                //if (hubConnection) hubConnection.invoke("SetField", GetMyField());
                 StartTimer(1, () => { }, () => {
-                    document.getElementById('OverlayLabel').hidden = true;
-                    StartSimulation(); // Старт!
+                    if (hubConnection) hubConnection.invoke("NextGameState");
                 });
             }
         );
     }
 
-    function Start30sTimer() {
-        StartTimer(30,
-            () => $('#10sTimer').text(timer),
+    function StartSimTimer(time) {
+        document.getElementById('OverlayLabel').hidden = true;
+
+        StartTimer(time,
+            () => $('#Timer').text(timer),
             () => {
                 document.getElementById('OverlayLabel').hidden = false;
                 $('#OverlayLabel').text('Конец симуляции!');
                 StartTimer(1, () => { }, () => {
-                    $('#OverlayLabel').text('');
+                    if (hubConnection) hubConnection.invoke("NextGameState");
                 });
             }
         );
-    }
-
-    function StartSimulation() {
-        Start30sTimer();
-
     }
 
 
@@ -449,6 +460,17 @@
         EditField(c);
     });
 
+    function GetMyField() {
+        let data;
+        for (var i = 0; i < canvas.width - 1; i++) {
+            for (var j = 0; j < canvas.height - 1; j++) {
+                let col = ctx.getImageData(i, j, 1, 1).data;
+                let exists = col[0] != 0 && col[1] != 0 && col[2] != 0;
+                data[i, j] = exists;
+            }
+        }
+        return data;
+    }
 
     function EditField(c) {
         if (canEditField && mousePressed && (operationChanged || (lastCellCoord.x != c.x || lastCellCoord.y != c.y))) {
@@ -458,11 +480,13 @@
 
             if (exists && erase) {
                 ctx.clearRect(c.x, c.y, 1, 1);
-                console.log(c);
+                //console.log(c);
+                if (hubConnection) hubConnection.invoke("EditField", c.x, c.y, false);
             }
             else if (!exists && !erase) {
                 ctx.fillRect(c.x, c.y, 1, 1);
-                console.log(c);
+                //console.log(c);
+                if (hubConnection) hubConnection.invoke("EditField", c.x, c.y, true);
             }
 
             lastCellCoord.x = c.x;
@@ -471,6 +495,9 @@
         }
     }
 
+    function ClearField() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
 
 
     function getPosition(elem, event) {
@@ -480,7 +507,57 @@
         return { x: x, y: y }
     }
 
+    // OpponentField
+    const opCanvas = document.getElementById("OpponentField");
+    const opCtx = opCanvas.getContext("2d", { willReadFrequently: true });
+    opCtx.globalAlpha = 0.5;
+    opCtx.fillStyle = "#654321";
 
+    function OpponentDraw(x, y, alive) {
+        if (alive) {
+            opCtx.fillRect(x, y, 1, 1);
+        }
+        else {
+            opCtx.clearRect(x, y, 1, 1);
+        }
+    }
+
+    function UpdateMyField(field) {
+        for (let i = 0; i < @GameSettings.FieldSize; i++) {
+            for (let j = 0; j < @GameSettings.FieldSize; j++) {
+
+                let col = ctx.getImageData(i, j, 1, 1).data;
+                let exists = col[0] != 0 && col[1] != 0 && col[2] != 0;
+
+                if (field.cells[i][j]) {
+                    if (!exists) ctx.fillRect(i, j, 1, 1);
+                }
+                else
+                    ctx.clearRect(i, j, 1, 1);
+            }
+        }
+    }
+
+    function ClearOpField() {
+        opCtx.clearRect(0, 0, opCanvas.width, opCanvas.height);
+    }
+
+    function UpdateOpponentField(field) {
+        for (let i = 0; i < @GameSettings.FieldSize; i++) {
+            for (let j = 0; j < @GameSettings.FieldSize; j++) {
+
+                let col = opCtx.getImageData(i, j, 1, 1).data;
+                let exists = col[0] != 0 && col[1] != 0 && col[2] != 0;
+
+                if (field.cells[i][j]) {
+                    if (!exists)
+                        opCtx.fillRect(i, j, 1, 1);
+                }
+                else
+                    opCtx.clearRect(i, j, 1, 1);
+            }
+        }
+    }
 
 
 </script>

@@ -1,10 +1,6 @@
-﻿using GameOfLIfe_StrDem.Hubs;
-using GameOfLIfe_StrDem.Models;
-using Microsoft.AspNetCore.SignalR;
-using System;
+﻿using GameOfLIfe_StrDem.Models;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace GameOfLIfe_StrDem.Services
 {

@@ -149,6 +149,7 @@ body {
 }
 
 .overlay-label {
+    position: fixed;
     display: flex;
     background: #000e0d9c;
     color: whitesmoke;

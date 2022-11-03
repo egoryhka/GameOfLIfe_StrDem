@@ -1,16 +1,13 @@
-﻿using GameOfLIfe_StrDem.Services;
+﻿using AutoMapper;
+using GameOfLIfe_StrDem.Models;
+using GameOfLIfe_StrDem.Services;
 using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using GameOfLIfe_StrDem.Models;
-using Microsoft.AspNetCore.Authorization;
 using System.Linq.Dynamic.Core;
-using Hangfire;
 using System.Threading;
-using Hangfire.Common;
-using System.Reflection;
+using System.Threading.Tasks;
 
 namespace GameOfLIfe_StrDem.Hubs
 {
@@ -18,24 +15,24 @@ namespace GameOfLIfe_StrDem.Hubs
     public class PlaygroundHub : Hub
     {
         private readonly PlaygroundService _playgroundService;
-        private readonly IHubContext<PlaygroundHub> _hubContext;
+        private readonly IMapper _mapper;
 
-        public PlaygroundHub(PlaygroundService playgroundService, IHubContext<PlaygroundHub> hubContext)
+        public PlaygroundHub(PlaygroundService playgroundService, IMapper mapper)
         {
             _playgroundService = playgroundService;
-            _hubContext = hubContext;
+            _mapper = mapper;
         }
         private async Task UpdatePlayersOnAllClients()
         {
             await Clients.AllExcept(_playgroundService.Players
                 .Where(x => x.Filtering)
                 .Select(x => x.Id))
-                .SendAsync("UpdatePlayerList", _playgroundService.Players);
+                .SendAsync("UpdatePlayerList", _mapper.Map<List<PlayerDto>>(_playgroundService.Players/*.OrderByDescending(x => x.Points)*/));
         }
 
         private async Task UpdatePlayersOnCaller()
         {
-            await Clients.Caller.SendAsync("UpdatePlayerList", _playgroundService.Players);
+            await Clients.Caller.SendAsync("UpdatePlayerList", _mapper.Map<List<PlayerDto>>(_playgroundService.Players/*.OrderByDescending(x => x.Points)*/));
         }
 
         public async Task FilterPlayers(string predicate)
@@ -44,12 +41,16 @@ namespace GameOfLIfe_StrDem.Hubs
             if (me != null)
             {
                 me.Filtering = true;
-                await Clients.Caller
-                    .SendAsync("UpdatePlayerList", _playgroundService.Players
+                var filterResult = _playgroundService.Players
                     .AsQueryable()
-                    .Where(predicate));
+                    .Where(predicate)
+                    .ToList();
+
+                await Clients.Caller
+                    .SendAsync("UpdatePlayerList", _mapper.Map<List<PlayerDto>>(filterResult/*.OrderByDescending(x => x.Points)*/));
             }
         }
+
 
         public async Task CancelFiltering()
         {
@@ -99,7 +100,7 @@ namespace GameOfLIfe_StrDem.Hubs
             if (sender != null)
             {
                 sender.Inviting = target.Inviting = true;
-                await Clients.Client(targetId).SendAsync("Invite", sender);
+                await Clients.Client(targetId).SendAsync("Invite", _mapper.Map<PlayerDto>(sender));
             }
 
             await UpdatePlayersOnAllClients();
@@ -142,39 +143,78 @@ namespace GameOfLIfe_StrDem.Hubs
 
                 if (game.P1.Ready && game.P2.Ready)
                 {
-                    await SendStartCountDown(game.P1.Id, game.P2.Id, 3);
-                    string countDownJob3 = BackgroundJob.Schedule(() => SendStopCountDown(game.P1.Id, game.P2.Id, 3), TimeSpan.FromSeconds(3));
+                    game.State = GameState.Starting;
 
-                    string countDownAfter3 = BackgroundJob.ContinueJobWith(countDownJob3,
-                          () => BackgroundJob.Schedule(() => SendStartCountDown(game.P1.Id, game.P2.Id, 10), TimeSpan.FromSeconds(1)));
-
-                    string countDownJob10 = BackgroundJob.ContinueJobWith(countDownAfter3,
-                       () => BackgroundJob.Schedule(() => SendStopCountDown(game.P1.Id, game.P2.Id, 10), TimeSpan.FromSeconds(10)));
-
-                    string countDownAfter10 = BackgroundJob.ContinueJobWith(countDownJob10,
-                          () => BackgroundJob.Schedule(() => SendStartCountDown(game.P1.Id, game.P2.Id, 30), TimeSpan.FromSeconds(1)));
-
-                    string countDownJob30 = BackgroundJob.ContinueJobWith(countDownAfter10,
-                       () => BackgroundJob.Schedule(() => SendStopCountDown(game.P1.Id, game.P2.Id, 30), TimeSpan.FromSeconds(30)));
-
-                    
+                    var clients = Clients.Clients(game.P1.Id, game.P2.Id);
+                    await clients.SendAsync("CountDown3");
                 }
             }
         }
 
 
-        public async Task SendStartCountDown(string id1, string id2, int sec)
+        public async Task NextGameState()
         {
-            try { await _hubContext.Clients.Clients(id1, id2).SendAsync("StartCountDown" + sec.ToString()); }
-            catch { Console.WriteLine(string.Join(", ", _hubContext.Clients.All)); }
+            Player me = _playgroundService.GetPlayer(Context.ConnectionId);
+            if (me != null && me.GameId != null && _playgroundService.Games.ContainsKey(me.GameId))
+            {
+                me.ReadyToNextState = true;
+                Game game = _playgroundService.Games[me.GameId];
+                Player opponent = game.GetOpponent(me);
+
+                if (me.ReadyToNextState && opponent.ReadyToNextState)
+                {
+                    var clients = Clients.Clients(game.P1.Id, game.P2.Id);
+                    me.ReadyToNextState = opponent.ReadyToNextState = false;
+                    switch (game.State)
+                    {
+                        case GameState.Starting:
+                            {
+                                game.State = GameState.Drawing;
+                                await clients.SendAsync("CountDownDraw", GameSettings.DrawTime);
+                                return;
+                            }
+                        case GameState.Drawing:
+                            {
+                                game.State = GameState.Simulation;
+                                await clients.SendAsync("CountDownSim", GameSettings.SimTime);
+
+                                var meClient = Clients.Client(me.Id);
+                                var opClient = Clients.Client(opponent.Id);
+
+                                for (int i = 0; i < GameSettings.SimTime * GameSettings.SimStepsPerSecond; i++)
+                                {
+                                    me.Field.SimulationStep();
+                                    opponent.Field.SimulationStep();
+                                    await meClient.SendAsync("UpdateFields", me.Field, opponent.Field);
+                                    await opClient.SendAsync("UpdateFields", opponent.Field, me.Field);
+                                    Thread.Sleep(1000 / GameSettings.SimStepsPerSecond);
+                                }
+
+                                return;
+                            }
+                        case GameState.Simulation:
+                            {
+                                game.State = GameState.End;
+                                Player winner = game.GetWinner();
+                                winner?.AddPoints();
+                                await clients.SendAsync("WinnerIs", winner);
+                                return;
+                            }
+                        case GameState.End:
+                            {
+                                await StopGame(me.GameId);
+                                return;
+                            }
+                    }
+                }
+            }
         }
 
-        public async Task SendStopCountDown(string id1, string id2, int sec)
-        {
-            try { await _hubContext.Clients.Clients(id1, id2).SendAsync("StopCountDown" + sec.ToString()); }
-            catch { Console.WriteLine(string.Join(", ", _hubContext.Clients.All)); }
-        }
-
+        //public void SetField(bool[,] field)
+        //{
+        //    Player me = _playgroundService.GetPlayer(Context.ConnectionId);
+        //    if (me != null) me.Field.Set(field);
+        //}
 
         public async Task CreateGame(string inviteSenderId)
         {
@@ -191,8 +231,8 @@ namespace GameOfLIfe_StrDem.Hubs
                 game.P1.Field.Clean();
                 game.P2.Field.Clean();
 
-                await Clients.Client(initiator.Id).SendAsync("GameCreated", inviteSender);
-                await Clients.Client(inviteSenderId).SendAsync("GameCreated", initiator);
+                await Clients.Client(initiator.Id).SendAsync("GameCreated", _mapper.Map<PlayerDto>(inviteSender));
+                await Clients.Client(inviteSenderId).SendAsync("GameCreated", _mapper.Map<PlayerDto>(initiator));
             }
 
             await UpdatePlayersOnAllClients();
@@ -208,17 +248,34 @@ namespace GameOfLIfe_StrDem.Hubs
                 game.P1.Ready = game.P2.Ready = false;
                 game.P1.GameId = game.P2.GameId = null;
 
-                if (_playgroundService.Players.FirstOrDefault(x => x.Id == game.P1.Id) != null)
-                    await Clients.Client(game.P1.Id).SendAsync("GameStoped");
-
-                if (_playgroundService.Players.FirstOrDefault(x => x.Id == game.P2.Id) != null)
-                    await Clients.Client(game.P2.Id).SendAsync("GameStoped");
-
                 _playgroundService.Games.Remove(gameId);
+
+                await Clients.Clients(game.P1.Id, game.P2.Id).SendAsync("GameStoped");
                 await UpdatePlayersOnAllClients();
             }
 
         }
+
+        public async Task EditField(int x, int y, bool alive)
+        {
+            var me = _playgroundService.GetPlayer(Context.ConnectionId);
+            if (me != null)
+            {
+                me.Field.SetCell(x, y, alive);
+
+                if (_playgroundService.Games.ContainsKey(me.GameId))
+                {
+                    Game game = _playgroundService.Games[me.GameId];
+                    var opponent = game.GetOpponent(me);
+
+                    if (opponent != null)
+                    {
+                        await Clients.Client(opponent.Id).SendAsync("OpponentDraw", x, y, alive);
+                    }
+                }
+            }
+        }
+
 
     }
 }

@@ -1,20 +1,14 @@
 using GameOfLIfe_StrDem.Hubs;
+using GameOfLIfe_StrDem.Models;
 using GameOfLIfe_StrDem.Services;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Hangfire;
-using Hangfire.SqlServer;
-using Hangfire.MemoryStorage;
+using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
 
 namespace GameOfLIfe_StrDem
 {
@@ -30,19 +24,17 @@ namespace GameOfLIfe_StrDem
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            // Вариант с хранилищем - базой не подходит.
-            //string hangFireConnectionString = Configuration.GetConnectionString("HangfireConnection");
-            //services.AddHangfire(h => h.UseSqlServerStorage(hangFireConnectionString));
-
-            services.AddHangfire(h => h.UseMemoryStorage());
+            string hangFireConnectionString = Configuration.GetConnectionString("HangfireConnection");
+            services.AddHangfire(h => h.UseSqlServerStorage(hangFireConnectionString));
             services.AddHangfireServer(option =>
             {
-                option.SchedulePollingInterval = TimeSpan.FromSeconds(1);
+                option.SchedulePollingInterval = TimeSpan.FromSeconds(0);
             });
 
+            services.AddAutoMapper(typeof(PlayerToDtoProfile));
             services.AddSingleton<PlaygroundService>();
 
-            services.AddSignalR();
+            services.AddSignalR().AddNewtonsoftJsonProtocol();
             services.AddControllersWithViews();
         }
 

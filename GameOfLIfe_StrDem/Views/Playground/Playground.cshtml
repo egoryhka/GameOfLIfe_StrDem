@@ -11,20 +11,26 @@
         "Даня",
         "Деня",
         "Дима",
-        "Егор",
         "Кира",
         "Лёня",
         "Макс",
         "Мотя",
         "Никита",
-        "Олег",
         "Паша",
         "Петя",
         "Рома",
         "Серёжа",
         "Стас",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    };
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            };
 }
+<style type="text/css">
+    .grid-background {
+        background-image: linear-gradient(#ffffff 0.5px, transparent 0.5px), linear-gradient(to right, #ffffff 0.5px, transparent 0.5px);
+        background-size: @((350f/GameSettings.FieldSize).ToString().Replace(',','.'))px @((350f/GameSettings.FieldSize).ToString().Replace(',','.'))px;
+    }
+</style>
+
+
 <a target="_blank" href="#">Новая вкладка</a>
 <a target="_blank" style="float:right" href="https://localhost:44310/hangfire">hangfire</a>
 
@@ -111,13 +117,13 @@
 
     <div class="field">
         <div class="grid-background" style="width:350px; height:350px">
-            <canvas id="MyField" class="w-100" width="10" height="10"> </canvas>
+            <canvas id="MyField" class="w-100" width="@GameSettings.FieldSize" height="@GameSettings.FieldSize"> </canvas>
         </div>
     </div>
 
     <div class="field">
         <div class="grid-background" style="width:350px; height:350px">
-            <canvas id="OpponentField" class="w-100" width="10" height="10">    </canvas>
+            <canvas id="OpponentField" class="w-100" width="@GameSettings.FieldSize" height="@GameSettings.FieldSize"> </canvas>
         </div>
     </div>
 
@@ -460,18 +466,6 @@
         EditField(c);
     });
 
-    function GetMyField() {
-        let data;
-        for (var i = 0; i < canvas.width - 1; i++) {
-            for (var j = 0; j < canvas.height - 1; j++) {
-                let col = ctx.getImageData(i, j, 1, 1).data;
-                let exists = col[0] != 0 && col[1] != 0 && col[2] != 0;
-                data[i, j] = exists;
-            }
-        }
-        return data;
-    }
-
     function EditField(c) {
         if (canEditField && mousePressed && (operationChanged || (lastCellCoord.x != c.x || lastCellCoord.y != c.y))) {
 
@@ -502,8 +496,10 @@
 
     function getPosition(elem, event) {
         var target = elem.getBoundingClientRect();
-        let x = Math.round((event.clientX - target.left + 17.5) / 35) - 1;
-        let y = Math.round((event.clientY - target.top + 17.5) / 35) - 1;
+        let cellSize = @((350f/GameSettings.FieldSize).ToString().Replace(',','.'));
+        let halfCellSize = cellSize / 2.0;
+        let x = Math.round((event.clientX - target.left + halfCellSize) / cellSize) - 1;
+        let y = Math.round((event.clientY - target.top + halfCellSize) / cellSize) - 1;
         return { x: x, y: y }
     }
 

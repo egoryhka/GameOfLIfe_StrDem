@@ -7,10 +7,9 @@ namespace GameOfLIfe_StrDem.Models
 {
     public static class GameSettings
     {
-        public static int FieldSize = 10;
-        public static int DrawTime = 10;
-        public static int SimTime = 10;
-        public static int SimStepsPerSecond = 4;
-
+        public static int FieldSize;
+        public static int DrawTime;
+        public static int SimTime;
+        public static int SimStepsPerSecond;
     }
 }

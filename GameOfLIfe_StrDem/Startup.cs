@@ -24,6 +24,12 @@ namespace GameOfLIfe_StrDem
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            GameSettings.FieldSize = Configuration.GetValue<int>("GameSettings:FieldSize");
+            GameSettings.DrawTime = Configuration.GetValue<int>("GameSettings:DrawTime");
+            GameSettings.SimTime = Configuration.GetValue<int>("GameSettings:SimTime");
+            GameSettings.SimStepsPerSecond = Configuration.GetValue<int>("GameSettings:SimStepsPerSecond");
+
+
             string hangFireConnectionString = Configuration.GetConnectionString("SomeeHangFireConnection");
             services.AddHangfire(h => h.UseSqlServerStorage(hangFireConnectionString));
             services.AddHangfireServer(option =>

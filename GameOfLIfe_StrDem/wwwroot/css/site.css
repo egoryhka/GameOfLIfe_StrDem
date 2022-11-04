@@ -183,10 +183,10 @@ body {
     }
 
 
-.grid-background {
+/*.grid-background {
     background-image: linear-gradient(#ffffff 0.5px, transparent 0.5px), linear-gradient(to right, #ffffff 0.5px, transparent 0.5px);
     background-size: 35px 35px;
-}
+}*/
 
 .players {
     width: 100%;

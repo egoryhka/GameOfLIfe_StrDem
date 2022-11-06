@@ -15,11 +15,14 @@ namespace GameOfLIfe_StrDem.Hubs
     public class PlaygroundHub : Hub
     {
         private readonly PlaygroundService _playgroundService;
+        private readonly GolDbContext _dbContext;
+
         private readonly IMapper _mapper;
 
-        public PlaygroundHub(PlaygroundService playgroundService, IMapper mapper)
+        public PlaygroundHub(PlaygroundService playgroundService, GolDbContext dbContext, IMapper mapper)
         {
             _playgroundService = playgroundService;
+            _dbContext = dbContext;
             _mapper = mapper;
         }
         private async Task UpdatePlayersOnAllClients()
@@ -197,6 +200,16 @@ namespace GameOfLIfe_StrDem.Hubs
                                 game.State = GameState.End;
                                 Player winner = game.GetWinner();
                                 winner?.AddPoints();
+
+                                await _dbContext.GameRecords.AddAsync(new Models.DB.GameRecord()
+                                {
+                                    P1Name = game.P1.Name,
+                                    P2Name = game.P2.Name,
+                                    P1Score = game.P1.Field.GetAliveCellsCount(),
+                                    P2Score = game.P2.Field.GetAliveCellsCount(),
+                                });
+                                await _dbContext.SaveChangesAsync();
+
                                 await clients.SendAsync("WinnerIs", winner);
                                 return;
                             }

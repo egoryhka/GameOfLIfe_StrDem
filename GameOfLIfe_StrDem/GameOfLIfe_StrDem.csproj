@@ -4,6 +4,7 @@
     <TargetFramework>net5.0</TargetFramework>
     <CopyRefAssembliesToPublishDirectory>false</CopyRefAssembliesToPublishDirectory>
     <AssemblyName>GOF_Online</AssemblyName>
+    <UserSecretsId>f147be3e-f49e-4668-84a8-cd11d7cf1af5</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,6 +15,8 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="5.0.17" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="5.0.17" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson" Version="5.0.17" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.17" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="5.0.17" />
     <PackageReference Include="System.Linq.Dynamic.Core" Version="1.2.20" />
   </ItemGroup>
 

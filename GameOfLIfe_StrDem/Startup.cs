@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
+using Microsoft.EntityFrameworkCore;
 
 namespace GameOfLIfe_StrDem
 {
@@ -29,8 +30,10 @@ namespace GameOfLIfe_StrDem
             GameSettings.SimTime = Configuration.GetValue<int>("GameSettings:SimTime");
             GameSettings.SimStepsPerSecond = Configuration.GetValue<int>("GameSettings:SimStepsPerSecond");
 
+            services.AddDbContext<GolDbContext>(options =>
+            options.UseSqlServer(Configuration.GetConnectionString("GameRecordsDbConnectionString")));
 
-            string hangFireConnectionString = Configuration.GetConnectionString("SomeeHangFireConnection");
+            string hangFireConnectionString = Configuration.GetConnectionString("HangFireConnection");
             services.AddHangfire(h => h.UseSqlServerStorage(hangFireConnectionString));
             services.AddHangfireServer(option =>
             {
@@ -75,8 +78,6 @@ namespace GameOfLIfe_StrDem
                 endpoints.MapHangfireDashboard();
                 endpoints.MapHub<PlaygroundHub>("/playground");
             });
-
-
         }
     }
 }

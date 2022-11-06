@@ -129,7 +129,7 @@
 
     <div id="ReadyRow" class="ready-row">
         <div id="MyReady"> <input class="commit-button" type="button" id="myReadyBtn" value="Готов" onclick="Ready()" /> </div>
-        <div id="Timer" class="timer"> 0 </div>
+        <div id="Timer" class="timer"> @GameSettings.DrawTime </div>
         <div id="OpponentReady"> <input class="commit-button" type="button" disabled="disabled" id="opponentReadyBtn" value="Готов" /> </div>
     </div>
 </div>
@@ -288,6 +288,7 @@
         hubConnection.on("GameCreated", function (opponent) {
             document.getElementById("Main").hidden = true;
             document.getElementById("Game").hidden = false;
+            document.getElementById('Timer').textContent = @GameSettings.DrawTime;
             inviteSender = null;
 
             document.getElementById('MyName').textContent = me.name;
